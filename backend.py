@@ -64,6 +64,14 @@ mini_client = AzureOpenAI(
 
 app = FastAPI()
 
+# serve all files in ./static at the web root, and fallback to index.html
+app.mount(
+    "/",
+    StaticFiles(directory="static", html=True),
+    name="static",
+)
+
+
 # Configure CORS for frontend communication
 origins = [
     "http://localhost",  # Replace with your frontend's URL if needed
@@ -73,13 +81,6 @@ origins = [
     "127.0.0.1:55740",
     "https://negobot.onrender.com",# Add your frontend's port if different
 ]
-# serve all files in ./static at the web root, and fallback to index.html
-app.mount(
-    "/",
-    StaticFiles(directory="static", html=True),
-    name="static",
-)
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -89,8 +90,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Mount the directory containing your index.html
-#app.mount("/", StaticFiles(directory="/", html=True), name="static")
 
 @app.options("/{path:path}")
 async def preflight_handler(request: Request, path: str):
