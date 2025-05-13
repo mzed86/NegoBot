@@ -93,17 +93,13 @@ app.add_middleware(
 
 @app.get("/", include_in_schema=False)
 async def serve_index():
-    index_path = os.path.join("Static", "index.html")
-    return FileResponse(index_path)
+    return FileResponse("Static/index.html")
 
 
-@app.options("/{path:path}")
-async def preflight_handler(request: Request, path: str):
-    response = JSONResponse(content={"message": "This is a CORS preflight response"})
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Accept"
-    return response
+# for any other GET (e.g. SPA client routes), also return index.html
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    return FileResponse("static/index.html")
 
 async def update_default_scenario(scenario: str):
     global defaultScenario
