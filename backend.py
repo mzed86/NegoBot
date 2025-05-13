@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import websockets
 from openai import AzureOpenAI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 load_dotenv()
 port = int(os.getenv("PORT", 8000))
@@ -89,6 +90,11 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
 )
+
+@app.get("/", include_in_schema=False)
+async def serve_index():
+    index_path = os.path.join("static", "index.html")
+    return FileResponse(index_path)
 
 
 @app.options("/{path:path}")
