@@ -68,8 +68,8 @@ app = FastAPI()
 # serve all files in ./static at the web root, and fallback to index.html
 app.mount(
     "/",
-    StaticFiles(directory="static", html=True),
-    name="static",
+    StaticFiles(directory="Static", html=True),
+    name="Static",
 )
 
 
