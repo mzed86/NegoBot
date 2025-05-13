@@ -1,0 +1,2 @@
+# NegoBot
+Negotiation chatbot
