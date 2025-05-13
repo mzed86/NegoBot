@@ -93,7 +93,7 @@ app.add_middleware(
 
 @app.get("/", include_in_schema=False)
 async def serve_index():
-    index_path = os.path.join("static", "index.html")
+    index_path = os.path.join("Static", "index.html")
     return FileResponse(index_path)
 
 
