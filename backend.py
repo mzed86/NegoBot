@@ -77,6 +77,7 @@ app.mount(
 origins = [
     "http://localhost",  # Replace with your frontend's URL if needed
     "http://127.0.0.1",
+    "http://127.0.0.1:8000",
     "http://localhost:3000",
     "http://localhost:63342",
     "127.0.0.1:55740",
