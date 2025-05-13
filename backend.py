@@ -99,7 +99,7 @@ async def serve_index():
 # for any other GET (e.g. SPA client routes), also return index.html
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
-    return FileResponse("static/index.html")
+    return FileResponse("Static/index.html")
 """
 async def update_default_scenario(scenario: str):
     global defaultScenario
@@ -395,7 +395,7 @@ async def conversation_endpoint(websocket: WebSocket):
         logging.error("Error in conversation_endpoint: %s", e)
 
 
-INDEX_PATH = os.path.join("static", "index.html")
+INDEX_PATH = os.path.join("Static", "index.html")
 
 # GET / → index.html
 @app.get("/", include_in_schema=False)
