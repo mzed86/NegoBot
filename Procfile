@@ -1,1 +1,1 @@
-uvicorn backend:app --reload
+unicorn backend:app --bind 0.0.0.0:$PORT

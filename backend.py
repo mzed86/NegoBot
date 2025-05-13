@@ -70,9 +70,16 @@ origins = [
     "http://127.0.0.1",
     "http://localhost:3000",
     "http://localhost:63342",
-    "127.0.0.1:55740"
+    "127.0.0.1:55740",
     "https://negobot.onrender.com",# Add your frontend's port if different
 ]
+# serve all files in ./static at the web root, and fallback to index.html
+app.mount(
+    "/",
+    StaticFiles(directory="static", html=True),
+    name="static",
+)
+
 
 app.add_middleware(
     CORSMiddleware,
