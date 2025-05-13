@@ -65,10 +65,10 @@ mini_client = AzureOpenAI(
 
 app = FastAPI()
 
-# serve all files in ./static at the web root, and fallback to index.html
+# Serve JS/CSS/images under /static
 app.mount(
-    "/",
-    StaticFiles(directory="Static", html=True),
+    "/Static",
+    StaticFiles(directory="Static", html=False),
     name="Static",
 )
 
@@ -90,17 +90,17 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods
     allow_headers=["*"],  # Allow all headers
 )
-
+"""
 @app.get("/", include_in_schema=False)
 async def serve_index():
     return FileResponse("Static/index.html")
-
-
+"""
+"""
 # for any other GET (e.g. SPA client routes), also return index.html
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
     return FileResponse("static/index.html")
-
+"""
 async def update_default_scenario(scenario: str):
     global defaultScenario
 
@@ -393,6 +393,20 @@ async def conversation_endpoint(websocket: WebSocket):
         logging.warning("Client WebSocket disconnected.")
     except Exception as e:
         logging.error("Error in conversation_endpoint: %s", e)
+
+
+INDEX_PATH = os.path.join("static", "index.html")
+
+# GET / → index.html
+@app.get("/", include_in_schema=False)
+async def serve_index():
+    return FileResponse(INDEX_PATH)
+
+# GET any other path (client-side route) → index.html
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    return FileResponse(INDEX_PATH)
+
 
 if __name__ == "__main__":
     import uvicorn
