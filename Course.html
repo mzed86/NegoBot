@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                      <meta charset="UTF-8" />
+                      <title>Negotiation Assistant</title>
+                      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" />
+                      <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+                      <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+                      <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+                      <style>
+                        :root {
+                          --primary-color: #fecb00; /* EY yellow */
+                          --secondary-color: #333333; /* EY dark gray */
+                          --bg-color: #f5f5f5; /* Light gray background */
+                          --card-bg: #ffffff; /* White card background */
+                          --font-family: 'Roboto', Arial, sans-serif;
+                          --border-radius: 12px; /* Rounded edges */
+                          --transition-time: 0.3s;
+                        }
+                        * {
+                          box-sizing: border-box;
+                        }
+                        body {
+                          margin: 0;
+                          padding: 0;
+                          font-family: var(--font-family);
+                          background-color: var(--bg-color);
+                          color: var(--secondary-color);
+                          display: flex;
+                          flex-direction: column;
+                          height: 100vh;
+                        }
+                        .page-content {
+                            height: 100%;
+                            display: flex;
+                            flex-direction: column;
+                          }
+
+                        .editable-html {
+                            flex: 1;
+                            min-height: 400px; /* or something bigger */
+                            height: 100%;
+                            width: 100%;
+                            padding: 10px;
+                            border: 1px solid #ccc;
+                            border-radius: 4px;
+                            background: #fff;
+                            font-family: inherit;
+                            font-size: 1rem;
+                            resize: vertical;
+                          }
+
+
+                        .container {
+                          display: flex;
+                          flex: 1;
+                        }
+                        .sidebar {
+                          width: 300px;
+                          background-color: var(--primary-color);
+                          color: var(--secondary-color);
+                          padding: 20px;
+                          display: flex;
+                          flex-direction: column;
+                          gap: 20px;
+                          border-radius: var(--border-radius);
+                        }
+                        .logo {
+                          position: absolute;
+                          top: 20px;
+                          right: 20px;
+                        }
+                        .logo img {
+                          max-width: 100px;
+                          height: auto;
+                          border-radius: var(--border-radius);
+                        }
+                        .sidebar h2 {
+                          font-size: 1.5rem;
+                          margin-bottom: 10px;
+                          color: var(--secondary-color);
+                        }
+                        .sidebar ul {
+                          list-style: none;
+                          padding: 0;
+                        }
+                        .sidebar li {
+                          display: flex;
+                          align-items: center;
+                          gap: 10px;
+                          cursor: pointer;
+                          padding: 10px;
+                          border-radius: var(--border-radius);
+                          transition: background-color var(--transition-time);
+                        }
+                        .sidebar li:hover {
+                          background-color: rgba(0, 0, 0, 0.1);
+                        }
+                        .sidebar li.completed::before {
+                          content: '✔';
+                          color: green;
+                          font-size: 1.2rem;
+                        }
+                        .content {
+                          flex: 1;
+                          padding: 20px;
+                          background-color: var(--bg-color);
+                          overflow-y: auto;
+                          border-radius: var(--border-radius);
+                        }
+                        .content h1 {
+                          font-size: 2rem;
+                          margin-bottom: 20px;
+                        }
+                        .content p {
+                          font-size: 1rem;
+                          line-height: 1.6;
+                        }
+                        .btn {
+                          font-size: 16px;
+                          padding: 10px 20px;
+                          margin: 10px 0;
+                          border: none;
+                          border-radius: var(--border-radius);
+                          cursor: pointer;
+                          transition: transform var(--transition-time);
+                        }
+                        .btn:hover {
+                          transform: translateY(-2px);
+                        }
+                        .btn-primary {
+                          background-color: var(--primary-color);
+                          color: var(--secondary-color);
+                        }
+                        .footer {
+                          text-align: center;
+                          padding: 10px;
+                          background-color: var(--card-bg);
+                          border-top: 1px solid #ccc;
+                          font-size: 0.9rem;
+                        }
+                        .footer a {
+                          color: var(--secondary-color);
+                          text-decoration: none;
+                          margin: 0 10px;
+                        }
+                        .footer a:hover {
+                          text-decoration: underline;
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="container">
+                        <div class="sidebar">
+                          <div class="logo">
+                            <img src="/Static/logo.png" alt="Logo" />
+                          </div>
+                          <h2>Course Progress</h2>
+                          <ul id="progress-list">
+                            <li id="NOTICE">Notice and Course Disclosure</li>
+                            <li id="DATA_POLICY">Data Usage Policy</li>
+                            <li id="DESCRIPTION">Course Description</li>
+                            <li id="SCENARIO">Scenario Setup</li>
+                            <li id="PLAN">Negotiation Plan</li>
+                            <li id="CHAT">Roleplay Chatbot</li>
+                            <li id="Negotiation Feedback and assessment">Negotiation Feedback and assessment</li>
+                            <li id="Course Evaluation">Course Evaluation</li>
+                          </ul>
+                        </div>
+                        <div class="content" id="content">
+                          <h1>Welcome</h1>
+                          <p>Content goes here...</p>
+                          <button class="btn btn-primary" id="next-button">Next</button>
+                        </div>
+                      </div>
+                      <div class="footer">
+                        <a href="/privacy-policy">Privacy Policy</a>
+                        <a href="/contact-us">Contact Us</a>
+                        <a href="/report-bug">Report a Bug</a>
+                        <a href="/request-feature">Request a Feature</a>
+                      </div>
+                      <script>
+                        // JavaScript to handle page navigation and content updates
+                                            const pages = ['NOTICE', 'DATA_POLICY', 'DESCRIPTION', 'SCENARIO', 'PLAN', 'CHAT', 'Negotiation Feedback and assessment', 'Course Evaluation'];
+                    let currentPageIndex = 0;
+
+                    const content = document.getElementById('content');
+                    const progressList = document.getElementById('progress-list');
+
+                    function handleNextClick() {
+                      if (currentPageIndex < pages.length - 1) {
+                        currentPageIndex++;
+                        updatePage();
+                      }
+                    }
+
+                    function handlePageClick(event) {
+                      const clickedPage = event.target.closest('li');
+                      if (clickedPage) {
+                        const pageId = clickedPage.id;
+                        const pageIndex = pages.indexOf(pageId);
+                        if (pageIndex !== -1) {
+                          currentPageIndex = pageIndex;
+                          updatePage();
+                        }
+                      }
+                    }
+
+                    function updatePage() {
+                      const currentPage = pages[currentPageIndex];
+                      const listItems = progressList.querySelectorAll('li');
+                      listItems.forEach((item, index) => {
+                        if (index === currentPageIndex) {
+                          item.classList.add('completed');
+                        }
+                      });
+
+                      content.innerHTML = `
+                        <h1>${currentPage.replace(/_/g, ' ')}</h1>
+                        <p>Content for ${currentPage.replace(/_/g, ' ')} goes here...</p>
+                        ${currentPageIndex < pages.length - 1 ? '<button class="btn btn-primary" id="next-button">Next</button>' : ''}
+                      `;
+
+                      const nextButton = document.getElementById('next-button');
+                      if (nextButton) {
+                        nextButton.removeEventListener('click', handleNextClick);
+                        nextButton.addEventListener('click', handleNextClick);
+                      }
+                    }
+
+                    progressList.addEventListener('click', handlePageClick);
+
+                    updatePage();
+
+
+
+                      </script>
+                    </body>
+                    </html>

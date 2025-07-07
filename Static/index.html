@@ -1,92 +1,168 @@
 <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8" />
-            <title>Chatbot Negotiation - Integrated App</title>
-            <!-- Google Font -->
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" />
-            <!-- React, ReactDOM, Babel, Marked -->
-            <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-            <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-            <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-            <style>
-              :root { --primary-color:#007bff; --secondary-color:#5cb85c; --danger-color:#d9534f; --bg-color:#f0f2f5; --card-bg:#ffffff; --font-family:'Roboto',Arial,sans-serif; --border-radius:8px; --transition-time:.3s; }
-              * { box-sizing: border-box; }
-              body { margin:0; padding:20px; background-color:var(--bg-color); font-family:var(--font-family); color:#333; }
-              h1 { text-align:center; }
-              .nav { background-color:var(--primary-color); color:white; display:flex; justify-content:center; padding:12px; position:sticky; top:0; z-index:1000; }
-              .nav div { margin:0; padding:12px 20px; cursor:pointer; position:relative; }
-              .nav div.active { background:white; color:var(--primary-color); }
-              .page-content { padding:20px; max-width:1000px; margin:20px auto; background:var(--card-bg); border-radius:var(--border-radius); box-shadow:0 2px 8px rgba(0,0,0,0.05);}
-              .hidden { display: none; }
-              .editable-html { border:1px solid #ccc; padding:10px; border-radius:4px; background:white; }
-              textarea.editable-html { width:100%; min-height:200px; font-family:inherit; font-size:1rem; resize:vertical; }
-              .preview { min-height:200px; }
-              .btn { font-size:16px; padding:10px 20px; margin:10px; border:none; border-radius:4px; cursor:pointer; transition:transform var(--transition-time); }
-              .btn:hover { transform:translateY(-2px); }
-              .btn-primary { background-color:var(--primary-color); color:white; }
-              .btn-secondary { background-color:var(--secondary-color); color:white; }
-              .btn-danger { background-color:var(--danger-color); color:white; }
-              #conversation { max-width:800px; margin:20px auto; background:var(--card-bg); padding:20px; border-radius:var(--border-radius); box-shadow:0 2px 8px rgba(0,0,0,0.05); min-height:200px; overflow-y:auto; }
-              .message { padding:10px; margin-bottom:10px; border-radius:4px; }
-              .message.user { background:#e6f7ff; text-align:right; }
-              .message.server { background:#f0f0f0; text-align:left; }
-              .tips-panel {
-                  position: fixed;
-                  top: 190px;
-                  left: 20px;
-                  width: 250px;
-                  background: var(--card-bg);
-                  border-radius: var(--border-radius);
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                  padding: 15px;
-                  z-index: 1000;
-                }
-                .tips-panel ul li {
-                  margin-bottom: 10px; /* Add spacing between <li> elements */
-                }
-              .page-content {
-                  margin-left: 300px; /* Adjust to leave space for the tips panel */
-                }
-              .demo-scenarios {
-                  background: var(--card-bg);
-                  border-radius: var(--border-radius);
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                  padding: 15px;
-                }
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Negotiation Assistant</title>
+  <!-- Google Font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" />
+  <!-- React, ReactDOM, Babel, Marked.js -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #fecb00;    /* EY yellow */
+      --secondary-color: #333333;  /* EY dark gray */
+      --bg-color: #f5f5f5;         /* Light gray background */
+      --card-bg: #ffffff;          /* White card background */
+      --font-family: 'Roboto', Arial, sans-serif;
+      --border-radius: 12px;
+      --transition-time: 0.3s;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--secondary-color);
+      display: flex; flex-direction: column; min-height: 100vh;
+    }
+    .container { display: flex; flex: 1; }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      width: 300px; background-color: var(--primary-color);
+      color: var(--secondary-color);
+      padding: 20px; display: flex; flex-direction: column; gap: 20px;
+      border-radius: var(--border-radius);
+      position: relative;
+    }
+    .logo {
+        position: static;        /* kill any “absolute” you may have left */
+        align-self: center;      /* center it horizontally */
+        max-width: 80%;          /* optional—so it never gets too huge */
+      }
+    .logo img { max-width: 100px; border-radius: var(--border-radius); }
+    .sidebar h2 { font-size: 1.5rem; margin-bottom: 10px; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar li {
+      padding: 10px; margin-bottom: 8px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background-color var(--transition-time);
+      display: flex; align-items: center;
+    }
+    .sidebar li:hover { background-color: rgba(0,0,0,0.1); }
+    .sidebar li.completed { background-color: rgba(0,0,0,0.2); }
+    .sidebar li.completed::before {
+      content: '✔'; color: green; margin-right: 8px;
+    }
+    .content {
+      flex: 1; padding: 20px;
+      overflow-y: auto; background-color: var(--bg-color);
+    }
+    .page-content {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 20px; margin-bottom: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .editable-html {
+            flex: 1;
+            width:100%;
+            height:100%;
+            min-height:300px;
+            padding:10px;
+            border:1px solid #ccc;
+            border-radius:4px;
+            background:#fff;
+            font-family:inherit;
+            font-size:1rem;
+            resize:vertical;
+            }
+    .preview { min-height:200px; }
+    .nav { display:none; } /* kill any leftover header nav */
+    .btn {
+      font-size:16px; padding:10px 20px; margin:10px 0;
+      border:none; border-radius:var(--border-radius);
+      cursor:pointer; transition:transform var(--transition-time);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background-color:var(--primary-color); color:var(--secondary-color); }
+    .btn-secondary { background-color:#333; color:#fff; }
+    .btn-danger { background-color:#d9534f; color:#fff; }
+    .demo-scenarios { margin-bottom:20px; }
+    .demo-scenarios .scenario { cursor:pointer; text-align:center; margin-bottom:15px; }
+    .demo-scenarios .scenario img {
+      width:25%; border-radius:4px;
+      transition:transform var(--transition-time);
+    }
+    .demo-scenarios .scenario:hover img { transform:scale(1.05); }
+    #conversation { min-height:200px; overflow-y:auto; }
+    .message { padding:10px; margin-bottom:10px; border-radius:4px; }
+    .message.user   { background:#e6f7ff; text-align:right; }
+    .message.server { background:#f0f0f0; text-align:left; }
+    .footer {
+      text-align:center; padding:10px;
+      background: var(--card-bg); border-top:1px solid #ccc;
+      font-size:0.9rem;
+    }
+    .footer a { margin:0 10px; color:var(--secondary-color); text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+  </style>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- EY Sidebar -->
+    <div class="sidebar">
+      <div class="logo">
+          <img src="/Static/logo.png" alt="Logo" />
+    </div>
+      <h2>Course Progress</h2>
+      <ul id="progress-list">
+        <li id="DATA_POLICY">Data Usage Policy</li>
+        <li id="SCENARIO">Scenario Setup</li>
+        <li id="PLAN">Negotiation Plan</li>
+        <li id="CHAT">Roleplay Chatbot</li>
+      </ul>
+    </div>
 
-              .demo-scenarios .scenario {
-                  margin-bottom: 15px;
-                  cursor: pointer;
-                  text-align: center;
-                }
+    <!-- React mounts here -->
+    <div class="content">
+      <div id="app-container"></div>
+    </div>
+  </div>
 
-              .demo-scenarios .scenario img {
-                  transition: transform var(--transition-time);
-                }
+  <!-- EY Footer -->
+  <div class="footer">
+    <a href="/privacy-policy">Privacy Policy</a>
+    <a href="/contact-us">Contact Us</a>
+    <a href="/report-bug">Report a Bug</a>
+    <a href="/request-feature">Request a Feature</a>
+  </div>
 
-              .demo-scenarios .scenario:hover img {
-                  transform: scale(1.05);
-                }
-
-              .demo-scenarios .scenario p {
-                  margin-top: 10px;
-                  font-weight: bold;
-                }
-              #debug { max-width:800px; margin:20px auto; padding-top:10px; border-top:1px solid #ccc; font-size:14px; color:#555; }
-            </style>
-          </head>
-          <body>
-            <h1>Negotiation Preparation Assistant</h1>
-            <div id="app-container"></div>
-            <div id="debug"></div>
-
-            <script type="text/babel">
-              const { useState, useRef, useEffect } = React;
-              const PAGES = { SCENARIO: 'SCENARIO', PLAN: 'PLAN', CHAT: 'CHAT' };
-              const PAGE_LABELS = { SCENARIO: 'Scenario Setup', PLAN: 'Negotiation Plan', CHAT: 'Chatbot' };
-              const defaultScenarioOne = `1) Scenario and business context:
+  <!-- React + App Logic -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const PAGES = {
+      DATA_POLICY: 'DATA_POLICY',
+      SCENARIO:     'SCENARIO',
+      PLAN:         'PLAN',
+      CHAT:         'CHAT'
+    };
+    const PAGE_LABELS = {
+      DATA_POLICY:  'Data Usage Policy',
+      SCENARIO:     'Scenario Setup',
+      PLAN:         'Negotiation Plan',
+      CHAT:         'Roleplay Chatbot'
+    };
+    // Sample scenarios:
+    const defaultScenarioOne = `1) Scenario and business context:
 An audit engagement for a multinational manufacturing company has overrun the expected timeline due to late delivery of financial data and complexities related to overseas subsidiaries.
 
 2) Facts and figures:
@@ -136,99 +212,78 @@ An audit engagement for a publicly listed SaaS company has exceeded its original
 4) Tone and demeanour of customer:
 The client is detail-oriented and operates in a fast-paced, high-stakes environment. They are frustrated by the cost increase, especially given internal perceptions of tech-enabled efficiency. However, they value precision and are likely to respond to data-backed reasoning. The tone should be professional, assertive, and focused on explaining the necessity and value of the additional work.`;
 
-              function HeaderNav({ currentPage, setCurrentPage }) {
-                return (
-                  <div className="nav">
-                    {Object.entries(PAGE_LABELS).map(([key,label]) => (
-                      <div
-                        key={key}
-                        className={currentPage === key ? 'active' : ''}
-                        onClick={() => setCurrentPage(key)}
-                      >
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
 
-              function ScenarioEditor({ scenario, setScenario, onGenerate }) {
-                return (
-                  <div className="page-content" style={{ display: 'flex' }}>
-                      {/* Demo Scenarios Panel */}
-                      <div className="demo-scenarios" style={{ marginRight: '20px', width: '250px' }}>
-                        <h3>Demo Scenarios</h3>
-                        <div className="scenario" onClick={() => setScenario(defaultScenarioOne)}>
-                          <img src="/Static/Scenario_1.png"  alt="Scenario 1" style={{ width: '50%', borderRadius: '4px' }} />
-                          <p>Scenario 1</p>
-                        </div>
-                        <div className="scenario" onClick={() => setScenario(defaultScenarioTwo)}>
-                          <img src="/Static/Scenario_2.png" alt="Scenario 2" style={{ width: '50%', borderRadius: '4px' }} />
-                          <p>Scenario 2</p>
-                        </div>
-                        <div className="scenario" onClick={() => setScenario(defaultScenarioThree)}>
-                          <img src="/Static/Scenario_3.png" alt="Scenario 3" style={{ width: '50%', borderRadius: '4px' }} />
-                          <p>Scenario 3</p>
-                        </div>
-                      </div>
+    function ScenarioEditor({ scenario, setScenario, onGenerate, goNext  }) {
+      return (
+          <div className="page-content" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h2>Scenario Setup</h2>
+            <textarea
+              className="editable-html"
+              value={scenario}
+              onChange={e => setScenario(e.target.value)}
+              style={{ flex: 1, marginBottom: '20px' }}
+            />
+            <div className="demo-scenarios" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+            <h3>Demo Scenarios</h3>
+            {[defaultScenarioOne, defaultScenarioTwo, defaultScenarioThree].map((sc, i) => (
+                <div key={i} className="scenario" onClick={() => setScenario(sc)}>
+                  <img
+                    src={`/Static/Scenario_${i+1}.png`}
+                    alt={`Scenario ${i+1}`}
+                  />
+                  <p>Scenario {i+1}</p>
+                </div>
+              ))}
 
-                      {/* Scenario Setup Panel */}
-                      <div style={{ flex: 1 }}>
-                        <h2>Scenario Setup</h2>
-                        <p>Input your scenario details here, the more detail the better your plan will be.</p>
-                        <textarea
-                          className="editable-html"
-                          value={scenario}
-                          onChange={e => setScenario(e.target.value)}
-                        />
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => {
-                            onGenerate();
-                          }}
-                        >
-                          Generate Negotiation Plan
-                        </button>
-                      </div>
-                    </div>
-                );
-              }
+          </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                onGenerate();
+                goNext(PAGES.PLAN);
+              }}
+            >
+              Generate Negotiation Plan
+            </button>
 
-              function NegotiationPlan({ plan, setPlan }) {
-                const [isEditing, setIsEditing] = useState(true);
+        </div>
+      );
+    }
 
-                return (
-                  <div className="page-content">
-                    <h3>Negotiation Plan</h3>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setIsEditing(!isEditing)}
-                    >
-                      {isEditing ? 'Preview' : 'Edit'}
-                    </button>
-                    {isEditing ? (
-                      <textarea
-                        className="editable-html"
-                        value={plan}
-                        onChange={(e) => setPlan(e.target.value)}
-                      />
-                    ) : (
-                      <div
-                        className="editable-html preview"
-                        dangerouslySetInnerHTML={{ __html: marked.parse(plan) }}
-                      />
-                    )}
-                  </div>
-                );
-              }
+    function NegotiationPlan({ plan, setPlan, goNext  }) {
+   const [isEditing, setIsEditing] = useState(false);
+   return (
+     <div className="page-content">
+       <h3>Negotiation Plan</h3>
 
-              function ChatbotUI() {
-      const [isRecording,setIsRecording]=useState(false);
-      const [conversation,setConversation]=useState([]);
-      const ws=useRef(null), audioCtx=useRef(null), mediaRef=useRef(null);
-      const scriptRef=useRef(null), srcRef=useRef(null), gainRef=useRef(null);
-      const playback=useRef(0), scheduled=useRef([]), endRef=useRef(null);
-      const SAMPLE_RATE=24000;
+       {isEditing ? (
+         <textarea className="editable-html" value={plan} onChange={e=>setPlan(e.target.value)} />
+       ) : (
+         <div className="editable-html preview" dangerouslySetInnerHTML={{ __html: marked.parse(plan)}}/>
+       )}
+      <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+        <button className="btn btn-secondary" onClick={()=>setIsEditing(!isEditing)}>
+          {isEditing ? 'Preview' : 'Edit'}
+        </button>
+        <button className="btn btn-primary" onClick={() => goNext(PAGES.CHAT)}>
+          Next: Roleplay Chatbot
+        </button>
+      </div>
+
+     </div>
+   );
+ }
+
+    function ChatbotUI() {
+      const [isRecording, setIsRecording] = useState(false);
+      const [conversation, setConversation] = useState([]);
+      const ws = useRef(), audioCtx = useRef(), scriptRef = useRef(), gainRef = useRef(), playback = useRef(0), scheduled = useRef([]), endRef = useRef(null);
+      const mediaRef = useRef();
+      const srcRef = useRef();
+      const SAMPLE_RATE = 24000;
+      useEffect(()=> endRef.current?.scrollIntoView({behavior:'smooth'}), [conversation]);
+
+
 
       useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[conversation]);
 
@@ -237,7 +292,7 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
         if(dbg){ const p=document.createElement('p'); p.textContent=`[${new Date().toLocaleTimeString()}] ${msg}`; dbg.appendChild(p);} };
 
       // Audio helpers
-      function createWav(buffer,rate,channels=1){ /* as before */
+      function createWav(buffer,rate,channels=1){
         const pcm=new Uint8Array(buffer); const header=new ArrayBuffer(44); const view=new DataView(header);
         function wstr(v,o,s){ for(let i=0;i<s.length;i++) view.setUint8(o+i,s.charCodeAt(i)); }
         wstr(view,0,'RIFF'); view.setUint32(4,36+pcm.length,true);
@@ -334,9 +389,10 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
             };
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRef.current = stream;
+            mediaRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             const srcNode = audioCtx.current.createMediaStreamSource(stream);
+            srcRef.current = srcNode;
             scriptRef.current = audioCtx.current.createScriptProcessor(4096, 1, 1);
             gainRef.current = audioCtx.current.createGain();
             gainRef.current.gain.value = 0;
@@ -364,125 +420,140 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
 
       function stopConversation(){ scriptRef.current?.disconnect(); srcRef.current?.disconnect(); gainRef.current?.disconnect(); ws.current?.close(); setIsRecording(false); /* logDebug('Conversation stopped.'); */ }
 
+
       return (
-        <div className="page-content">
-            <div className="tips-panel">
-            <h3>Tips and Tricks</h3>
-            <ul>
-              <li>If the CFO asks to see documentation say: <br /><br />
-              <b><i>"Can we move the roleplay to the next day where you've seen  the documentation?"</i></b>
-              </li>
+    <div className="page-content" style={{ position:'relative' }}>
+      <h2>Role play chat</h2>
+      <div style={{ textAlign:'center' }}>
+        {isRecording ? (
+          <button
+            className="btn btn-danger"
+            onClick={stopConversation}    // ← actually call it
+          >
+            Stop Conversation
+          </button>
+        ) : (
+          <button
+            className="btn btn-secondary"
+            onClick={startConversation}   // ← actually call it
+          >
+            Start Conversation
+          </button>
+        )}
+      </div>
+      {conversation
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map((m, i) => (
+          <div key={i} className={`message ${m.role}`}>
+            <strong>{m.role === 'user' ? 'User:' : 'Server:'}</strong>
+            <p>{m.text}</p>
+            <small>{new Date(m.timestamp).toLocaleTimeString()}</small>
+          </div>
+        ))}
+      <div ref={endRef}></div>
+    </div>
+  );
+}
 
-              <li>Once you're done say: <br /><br />
-              <b><i>""End the roleplay and give me feedback"</i></b>
-              </li>
-            </ul>
-          </div>
-          <h2>Role play chat</h2>
-          <div style={{textAlign:'center'}}>
-            {isRecording
-              ?<button className="btn btn-danger" onClick={stopConversation}>Stop Conversation</button>
-              :<button className="btn btn-secondary" onClick={startConversation}>Start Conversation</button>
-            }
-          </div>
-          <div id="conversation">
-            {conversation.sort((a,b)=>a.timestamp-b.timestamp).map((m,i)=>(
-              <div key={i} className={`message ${m.role}`}>
-                <strong>{m.role==='user'?'User:':'Server:'}</strong>
-                <p>{m.text}</p>
-                <small>{new Date(m.timestamp).toLocaleTimeString()}</small>
-              </div>
-            ))}
-            <div ref={endRef}></div>
-          </div>
-        </div>
-      );
-    }
-
-    function AppRouter() {
-      const [page, setPage] = useState(PAGES.SCENARIO);
-      const defaultScenario = defaultScenarioOne;
-      const defaultPlan = `# Negotiation Plan\n## 1) Objectives...`;
-      const [scenario, setScenario] = useState(defaultScenario);
-      const [plan, setPlan] = useState(defaultPlan);
+    function App() {
+      const [page, setPage] = useState(PAGES.DATA_POLICY);
+      const [completedPages, setCompletedPages] = useState([]);
+      const [scenario, setScenario] = useState(defaultScenarioOne);
+      const [plan, setPlan] = useState('# Negotiation Plan\n\n');
 
       const generatePlan = async () => {
-  console.log('Generating plan...');
-  console.log('Scenario:', scenario);
+            setPage(PAGES.PLAN);
+            setPlan('');
+            const resp = await fetch('/api/generate_plan', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+              },
+              body: JSON.stringify({ scenario })
+            });
+            if (!resp.ok) throw new Error(resp.statusText);
 
-  setPage(PAGES.PLAN);
-  setPlan(''); // Clear the plan before starting to stream
+            const reader  = resp.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
 
-  try {
-    const payload = { scenario };
-    console.log('Payload:', payload);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // Decode this chunk and append to buffer
+        buffer += decoder.decode(value, { stream: true });
 
-    const resp = await fetch('/api/generate_plan', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
-      },
-      body: JSON.stringify(payload),
-    });
+        // Split on newlines, keep the last partial line in buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
 
-    if (!resp.ok) {
-      throw new Error(`HTTP error! status: ${resp.status}`);
-    }
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let partialPlan = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      console.log('Received chunk:', chunk);
-      const lines = chunk.split('\n').filter(line => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.substring(6)).chunk;
-          console.log('Parsed data:', data);
-          partialPlan += data;
-          setPlan(partialPlan);
+        // Process only the complete lines
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const { chunk } = JSON.parse(line.slice(6));
+          setPlan(prev => prev + chunk);
         }
       }
-    }
+     };
 
-    console.log('Streaming completed.');
-  } catch (err) {
-    console.error('Error generating plan:', err);
-  }
-};
+      function goNext(nextPage) {
+          // mark *current* page as completed
+          setCompletedPages(prev =>
+            prev.includes(page) ? prev : [...prev, page]
+          );
+          // then navigate
+          setPage(nextPage);
+        }
+
+      // Hook sidebar clicks → React state
+      useEffect(() => {
+        Object.values(PAGES).forEach(key => {
+          const li = document.getElementById(key);
+          if (!li) return;
+          li.onclick = () => setPage(key);
+          const isDone = key === page || completedPages.includes(key);
+          li.classList.toggle('completed', isDone);
+        });
+      }, [page, completedPages]);
+
+      function DataPolicy() {
+        return (
+          <div className="page-content">
+            <h2>Data Usage Policy</h2>
+            <p>
+              [Your policy text here…]
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => goNext(PAGES.SCENARIO)}
+            >
+              Next: Scenario Setup
+            </button>
+          </div>
+        );
+      }
+
+
 
       return (
         <>
-          <HeaderNav currentPage={page} setCurrentPage={setPage} />
-          {/* ADDED: keep components mounted and toggle visibility via CSS */}
-          <div className={page === PAGES.SCENARIO ? '' : 'hidden'}>
-            {/* ADDED: Scenario page visibility control */}
+          {page === PAGES.DATA_POLICY && <DataPolicy goNext={() => goNext(PAGES.SCENARIO)} />}
+          {page === PAGES.SCENARIO    && (
             <ScenarioEditor
               scenario={scenario}
               setScenario={setScenario}
               onGenerate={generatePlan}
+              goNext={goNext}
             />
-          </div>
-          <div className={page === PAGES.PLAN ? '' : 'hidden'}>
-            {/* ADDED: Plan page visibility control */}
-            <NegotiationPlan plan={plan} setPlan={setPlan} />
-          </div>
-          <div className={page === PAGES.CHAT ? '' : 'hidden'}>
-            {/* ADDED: Chat page visibility control; ChatbotUI stays mounted */}
-            <ChatbotUI />
-          </div>
+          )}
+          {page === PAGES.PLAN        && <NegotiationPlan plan={plan} setPlan={setPlan} goNext={goNext} />}
+          {page === PAGES.CHAT        && <ChatbotUI />}
         </>
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('app-container')).render(<AppRouter />);
+    ReactDOM.createRoot(document.getElementById('app-container')).render(<App />);
   </script>
 </body>
 </html>
