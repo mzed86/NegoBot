@@ -1,6 +1,9 @@
 # 1. Pick a base image with Python 3.11 (slim to keep it small)
 FROM python:3.11
 
+# Ensure necessary directories exist and have the right permissions
+RUN mkdir -p /var/lib/apt/lists/partial && chmod 755 /var/lib/apt/lists/partial
+
 # 2. Install the ODBC driver and build tools
 RUN apt-get update \
  && apt-get install -y curl gnupg unixodbc-dev gcc g++ \
