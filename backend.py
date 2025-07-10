@@ -14,8 +14,83 @@ import websockets
 from openai import AzureOpenAI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import pyodbc
+import uuid
+from datetime import datetime
+import asyncio
 
 load_dotenv()
+# Configure logging
+logging.basicConfig(
+    filename='app_logs.txt',  # Log to a file named 'app_logs.txt'
+    level=logging.INFO,       # Set the log level to INFO
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def get_connection():
+    conn_str = (
+        f"Driver={{ODBC Driver 18 for SQL Server}};"
+        f"Server={os.getenv('DB_SERVER')};"
+        f"Database={os.getenv('DB_NAME')};"
+        f"Uid={os.getenv('DB_USERNAME')};"
+        f"Pwd={os.getenv('DB_PASSWORD')};"
+        f"TrustServerCertificate=no;Connection Timeout=30;"
+    )
+    return pyodbc.connect(conn_str)
+
+def save_session(session_id, user_id, started_at):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO Sessions (SessionID, UserID, StartedAt) VALUES (?, ?, ?)",
+        session_id, user_id, started_at
+    )
+    conn.commit()
+    conn.close()
+
+def save_message(session_id, speaker, content, created_at):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO Messages (SessionID, Speaker, Content, CreatedAt) VALUES (?, ?, ?, ?)",
+        session_id, speaker, content, created_at
+    )
+    conn.commit()
+    conn.close()
+
+async def message_worker(queue: asyncio.Queue):
+    logging.info("message_worker: starting up")
+    while True:
+        session_id, speaker, content, created_at = await queue.get()
+        logging.info(f"message_worker: dequeued → session={session_id!r}, speaker={speaker}, content={content!r}")
+        try:
+            # Offload the blocking DB write to a thread
+            await asyncio.to_thread(save_message, session_id, speaker, content, created_at)
+            logging.info(f"message_worker: saved message for session={session_id}")
+        except Exception as e:
+            logging.error(f"message_worker: FAILED to save message: {e}", exc_info=True)
+        finally:
+            queue.task_done()
+
+app = FastAPI()
+
+# Serve JS/CSS/images under /static
+app.mount(
+    "/Static",
+    StaticFiles(directory="Static", html=False),
+    name="Static",
+)
+
+
+@app.on_event("startup")
+async def on_startup():
+    # Initialize the queue and start the DB writer background task
+    app.state.message_queue = asyncio.Queue()
+    asyncio.create_task(message_worker(app.state.message_queue))
+    logging.info("on_startup: message_queue created and worker spawned")
+
+
+
 port = int(os.getenv("PORT", 8000))
 api_key = os.getenv("API_KEY")
 # Initialize the default scenario
@@ -25,12 +100,7 @@ defaultScenario = ("You are playing the role of a Chief Financial Officer (CFO) 
                   "You speak in a direct, no-nonsense tone. Do not accept excuses or fluff — stay focused on value, results, and accountability. "
                   "You are willing to say no. Keep your responses concise and authoritative.")
 
-# Configure logging
-logging.basicConfig(
-    filename='app_logs.txt',  # Log to a file named 'app_logs.txt'
-    level=logging.INFO,       # Set the log level to INFO
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+
 # at module‐scope, create the event and mark the default scenario “ready”
 scenario_ready = asyncio.Event()
 scenario_ready.set()    # on startup, the defaultScenario is already available
@@ -61,15 +131,6 @@ mini_client = AzureOpenAI(
     azure_endpoint  = gpt_endpoint,
     api_key         = subscription_key,
     azure_deployment= "gpt-4o-mini"              # ← this tells the SDK which deployment to call
-)
-
-app = FastAPI()
-
-# Serve JS/CSS/images under /static
-app.mount(
-    "/Static",
-    StaticFiles(directory="Static", html=False),
-    name="Static",
 )
 
 
@@ -214,6 +275,12 @@ async def conversation_endpoint(websocket: WebSocket):
 
     await websocket.accept()
     user_speech_stop_timestamp = None  # Store timestamp from speech_stopped event
+  # Create a new conversation session
+    session_id = str(uuid.uuid4())
+    user_id = "anonymous"
+    started_at = datetime.utcnow()
+  # Asynchronously insert the new session (user 'anonymous')
+    asyncio.create_task(asyncio.to_thread(save_session, session_id, user_id, started_at))
     try:
         logging.info("Client connected. Attempting to connect to Azure API...")
         async with websockets.connect(chat_endpoint) as azure_ws:
@@ -250,7 +317,7 @@ async def conversation_endpoint(websocket: WebSocket):
             async def forward_client_to_azure():
                 while True:
                     data = await websocket.receive_text()
-                    logging.info("Received message from client: %s", data)
+                    #logging.info("Received message from client: %s", data)
                     input_message = json.loads(data)
                     if "scenario_update" in input_message:
                         scenario_info = input_message["scenario_update"]
@@ -325,6 +392,10 @@ async def conversation_endpoint(websocket: WebSocket):
                             "transcript": final_transcript,
                             "timestamp": ts
                         }))
+                        # Enqueue assistant message for DB
+                        msg_time = datetime.fromtimestamp(ts / 1000.0)
+                        logging.info(f"Enqueuing ASSISTANT message: {final_transcript!r}")
+                        await app.state.message_queue.put((session_id, "assistant", final_transcript, msg_time))
                         logging.info("Forwarded final server transcript for item_id %s: %s", item_id, final_transcript)
 
                     elif event_type == "input_audio_buffer.speech_stopped":
@@ -357,6 +428,10 @@ async def conversation_endpoint(websocket: WebSocket):
                             "transcript": transcript,
                             "timestamp": ts
                         }))
+                        # Enqueue user message for DB (using UTC timestamp)
+                        msg_time = datetime.fromtimestamp(ts / 1000.0)
+                        logging.info(f"Enqueuing USER message: {transcript!r}")
+                        await app.state.message_queue.put((session_id, "user", transcript, msg_time))
                         logging.info("Forwarded completed user transcription for item_id %s: %s", item_id, transcript)
                         user_speech_stop_timestamp = None  # Reset timestamp
 
