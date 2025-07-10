@@ -1,5 +1,5 @@
 # 1. Pick a base image with Python 3.11 (slim to keep it small)
-FROM python:3.11-slim
+FROM python:3.11
 
 # 2. Install the ODBC driver and build tools
 RUN apt-get update \
@@ -10,9 +10,7 @@ RUN apt-get update \
     https://packages.microsoft.com/config/debian/10/prod.list \
     > /etc/apt/sources.list.d/mssql-release.list \
  && apt-get update \
- && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
- # clean up apt cache
- && rm -rf /var/lib/apt/lists/*
+ && ACCEPT_EULA=Y apt-get install -y msodbcsql18
 
 # 3. Copy your code in and install Python deps
 WORKDIR /app
