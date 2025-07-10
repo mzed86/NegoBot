@@ -1,4 +1,4 @@
-import logging
+import logging, sys
 import asyncio
 import json
 import time
@@ -22,9 +22,9 @@ import asyncio
 load_dotenv()
 # Configure logging
 logging.basicConfig(
-    filename='app_logs.txt',  # Log to a file named 'app_logs.txt'
-    level=logging.INFO,       # Set the log level to INFO
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    stream=sys.stdout,  # send logs to stdout
+    level = logging.INFO,  # INFO and above
+    format = '%(asctime)s - %(levelname)s - %(message)s',
 )
 
 def get_connection():
