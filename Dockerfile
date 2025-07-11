@@ -1,5 +1,5 @@
 # 1. Pick a base image with Python 3.13
-FROM python:3.13
+FROM python:3.12-slim
 USER root
 # Ensure necessary directories exist and have the right permissions
 RUN mkdir -p /var/lib/apt/lists/partial && chmod 755 /var/lib/apt/lists/partial
