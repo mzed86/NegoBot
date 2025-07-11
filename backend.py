@@ -86,7 +86,7 @@ class FrameAncestorsMiddleware(BaseHTTPMiddleware):
         # response.headers['X-Frame-Options'] = 'ALLOWALL'
         return response
 
-app.add_middleware(FrameAncestorsMiddleware)
+#app.add_middleware(FrameAncestorsMiddleware)
 
 # Serve JS/CSS/images under /static
 app.mount(
@@ -221,7 +221,7 @@ async def generate_negotiation_plan(scenario: str):
         "1) Objectives, 2) BATNA Analysis, 3) Key Tactics, 4) Concession Strategy including what to ask for in return, "
         "5) A table with the expected rebuttals and suggested responses, 6) Next Steps."
         "Use the latest findings in negotiation science to inform your plan. So the plan should incorporate:"
-        "Anchoring, Priority Disclosure Timing, Integrative Bragaining, emphasize trust and reciprocity, perspective taking"
+        "Anchoring, Priority Disclosure Timing, Integrative Bargaining, emphasize trust and reciprocity, perspective taking"
         "and team negotiation. "
     )
     messages = [
