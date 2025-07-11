@@ -1,7 +1,6 @@
 # 1. Pick a base image with Python 3.13
 FROM python:3.13
 USER root
-USER 1001
 # Ensure necessary directories exist and have the right permissions
 RUN sudo mkdir -p /var/lib/apt/lists/partial && chmod 755 /var/lib/apt/lists/partial
 
@@ -13,6 +12,9 @@ curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/source
 apt-get update && \
 ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev gcc g++ && \
 pip install -r requirements.txt
+
+
+USER 1001
 
 # 3. Copy your code in and install Python deps
 WORKDIR /app
