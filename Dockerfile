@@ -1,21 +1,14 @@
-# 1. Pick a base image with Python 3.11 (slim to keep it small)
-FROM python:3.11
+# 1. Pick a base image with Python 3.13
+FROM python:3.13
 USER root
-# Ensure necessary directories exist and have the right permissions
-RUN apt-get update && \
-apt-get install -y --no-install-recommends \
-build-essential \
-unixodbc-dev \
-curl \
-gnupg2 && \
-apt-get clean
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+# 2. Install the ODBC driver and build tools
+RUN apt-get update && \
+apt-get install -y curl gnupg && \
+curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
 curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
 apt-get update && \
-ACCEPT_EULA=Y apt-get install -y msodbcsql17 && \
-apt-get clean
-
+ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev gcc g++ && \
 pip install -r requirements.txt
 
 # 3. Copy your code in and install Python deps
