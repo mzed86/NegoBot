@@ -3,7 +3,7 @@ FROM python:3.13
 USER root
 USER 1001
 # Ensure necessary directories exist and have the right permissions
-RUN mkdir -p /var/lib/apt/lists/partial && chmod 755 /var/lib/apt/lists/partial
+RUN sudo mkdir -p /var/lib/apt/lists/partial && chmod 755 /var/lib/apt/lists/partial
 
 # 2. Install the ODBC driver and build tools
 RUN apt-get update && \
