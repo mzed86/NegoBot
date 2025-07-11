@@ -5,8 +5,7 @@ FROM python:3.11
 RUN mkdir -p /var/lib/apt/lists/partial && chmod 755 /var/lib/apt/lists/partial
 
 # 2. Install the ODBC driver and build tools
-RUN mkdir -p /var/lib/apt/lists/partial && \
-chmod 755 /var/lib/apt/lists/partial && \
+RUN
 apt-get update && \
 apt-get install -y curl gnupg && \
 curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
