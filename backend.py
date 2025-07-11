@@ -10,6 +10,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPExcept
 from fastapi import BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 import websockets
 from openai import AzureOpenAI
 from fastapi.staticfiles import StaticFiles
@@ -73,6 +74,19 @@ async def message_worker(queue: asyncio.Queue):
             queue.task_done()
 
 app = FastAPI()
+
+class FrameAncestorsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        # Replace with the actual domain(s) that will embed you,
+        # or use '*' to allow any domain:
+        response.headers['Content-Security-Policy'] = "frame-ancestors *"
+        #* adds all domains, which is not recommended for production.
+        # If you prefer the old header (not as fine‑grained):
+        # response.headers['X-Frame-Options'] = 'ALLOWALL'
+        return response
+
+app.add_middleware(FrameAncestorsMiddleware)
 
 # Serve JS/CSS/images under /static
 app.mount(
