@@ -2,7 +2,6 @@ services:
   - type: web
     name: negotiationbot
     env: docker
-    startCommand: uvicorn backend:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DB_SERVER
         value: negobot-sqlsvr.database.windows.net
