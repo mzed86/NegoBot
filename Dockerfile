@@ -14,13 +14,17 @@ RUN apt-get update && \
     ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev gcc g++ && \
     rm -rf /var/lib/apt/lists/*
 
-# 3. Switch to non‑root user
-USER 1001
+
+
 
 # 3. Copy your code in and install Python deps
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app
+
+# 3. Switch to non‑root user
+USER 1001
+
 # 4. Your start command
 CMD ["uvicorn", "backend:app", "--host", "0.0.0.0", "--port", "8000"]
