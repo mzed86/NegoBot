@@ -1,16 +1,12 @@
 import logging, sys
-import asyncio
 import json
 import time
-import base64
 import os
 from dotenv import load_dotenv
-
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, HTTPException
 from fastapi import BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
 import websockets
 from openai import AzureOpenAI
 from fastapi.staticfiles import StaticFiles
@@ -19,6 +15,8 @@ import pyodbc
 import uuid
 from datetime import datetime
 import asyncio
+import re
+
 
 load_dotenv()
 # Configure logging
@@ -35,7 +33,8 @@ def get_connection():
         f"Database={os.getenv('DB_NAME')};"
         f"Uid={os.getenv('DB_USERNAME')};"
         f"Pwd={os.getenv('DB_PASSWORD')};"
-        f"TrustServerCertificate=no;Connection Timeout=30;"
+        f"Encrypt=yes;TrustServerCertificate=yes;"
+        "Connection Timeout=30;"
     )
     return pyodbc.connect(conn_str)
 
@@ -74,19 +73,6 @@ async def message_worker(queue: asyncio.Queue):
             queue.task_done()
 
 app = FastAPI()
-
-class FrameAncestorsMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        # Replace with the actual domain(s) that will embed you,
-        # or use '*' to allow any domain:
-        response.headers['Content-Security-Policy'] = "frame-ancestors *"
-        #* adds all domains, which is not recommended for production.
-        # If you prefer the old header (not as fine‑grained):
-        # response.headers['X-Frame-Options'] = 'ALLOWALL'
-        return response
-
-#app.add_middleware(FrameAncestorsMiddleware)
 
 # Serve JS/CSS/images under /static
 app.mount(
@@ -288,6 +274,7 @@ async def conversation_endpoint(websocket: WebSocket):
         logging.info("Scenario is now ready – proceeding with WebSocket handshake")
 
     await websocket.accept()
+    logging.info("🟢 WebSocket.accept() succeeded")
     user_speech_stop_timestamp = None  # Store timestamp from speech_stopped event
   # Create a new conversation session
     session_id = str(uuid.uuid4())
@@ -295,6 +282,11 @@ async def conversation_endpoint(websocket: WebSocket):
     started_at = datetime.utcnow()
   # Asynchronously insert the new session (user 'anonymous')
     asyncio.create_task(asyncio.to_thread(save_session, session_id, user_id, started_at))
+    await websocket.send_text(json.dumps({
+        "type": "session_id",
+        "session_id": session_id
+    }))
+    logging.info(f"Sent session_id to client: {session_id}")
     try:
         logging.info("Client connected. Attempting to connect to Azure API...")
         async with websockets.connect(chat_endpoint) as azure_ws:
@@ -383,7 +375,7 @@ async def conversation_endpoint(websocket: WebSocket):
             async def forward_azure_to_client():
                 nonlocal user_speech_stop_timestamp
                 async for message in azure_ws:
-                    logging.info("Received message from Azure API: %s", message)
+                    #logging.info("Received message from Azure API: %s", message)
                     event = json.loads(message)
                     event_type = event.get("type")
                     item_id = event.get("item_id")  # Capture item_id if provided
@@ -456,7 +448,7 @@ async def conversation_endpoint(websocket: WebSocket):
                             "item_id": item_id,
                             "delta": delta
                         }))
-                        logging.info("Forwarded audio delta for item_id %s (length: %d)", item_id, len(delta))
+                        #logging.info("Forwarded audio delta for item_id %s (length: %d)", item_id, len(delta))
 
                     elif event_type == "response.audio.done":
                         ts = int(time.time() * 1000)
@@ -484,6 +476,99 @@ async def conversation_endpoint(websocket: WebSocket):
     except Exception as e:
         logging.error("Error in conversation_endpoint: %s", e)
 
+@app.post("/api/feedback")
+async def generate_feedback(request: Request):
+    """
+    Pull full transcript for the given session_id, then call gpt-4o-mini
+    once per feedback area to generate a score + comment.
+    """
+    data = await request.json()
+    session_id = data.get("session_id")
+    print(f"Received,within feedback endpoint, session_id: {session_id}")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing 'session_id' in request")
+
+    # 1) Fetch all messages for this session
+    conn = None
+    try:
+        print('connection to database within generate_feedback endpoint')
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT Speaker, Content, CreatedAt FROM Messages WHERE SessionID = ? ORDER BY CreatedAt",
+            session_id
+        )
+        rows = cursor.fetchall()
+    finally:
+        if conn:
+            conn.close()
+
+
+    # Build a single transcript string
+    transcript = "\n".join(f"{row.Speaker}: {row.Content}" for row in rows)
+    print('transcript: ',transcript)
+
+    # 2) Define your feedback areas
+    areas = [
+        'Anchoring',
+        'Priority Disclosure Timing',
+        'Integrative Bargaining',
+        'Trust and Reciprocity',
+        'Perspective Taking',
+        'Team Negotiation'
+    ]
+
+    scores = {}
+    feedback = {}
+
+    # 3) For each area, call GPT‑4o‑mini synchronously
+    for area in areas:
+        # You can customize this generic prompt for each area later
+        user_prompt = (
+                f"You are a negotiation coach. Given the following transcript:\n\n"
+                f"{transcript}\n\n"
+                f"Please evaluate the negotiator in the user role on the skill: {area}.\n"
+                f"Reference the latest reasearch into why this skill is important in negotiation.\n"
+                f"Assess how well the user applied this skill in the conversation.\n"
+                f"Reference specific things the negotiator said and analyse the relevance offering ways to improve.\n"
+                f"Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. Be brutal in your assessment, "
+                f"don't be shy to give a score 1 or 2 if there is no evidence of performance against the skill above. Only give a score above 3 if there "
+                f"is reasonable evidence that the user knew about the skill's significance in negotiation.\n"
+                f"Provide a brief comment explaining your score.\n"                                
+                "ONLY output a raw JSON object, with NO markdown, code fences, or extra text. "
+                "It must look like {\"score\":<1-10>,\"comment\":\"...\"} and nothing else."
+                )
+
+        response = mini_client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You provide comprehensive, actionable feedback. Your role is a negotiation coach that references the lates"
+                                              "academic research in giving feedback and coaching negotiators."
+                                              "Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. Be brutal in your assessment, "
+                f"don't be shy to give a score 1 or 2 if there is no evidence of performance against the skill above. Only give a score above 3 if there "
+                f"is reasonable evidence that the user knew about the skill's significance in negotiation"},
+                {"role": "user",   "content": user_prompt}
+            ],
+            max_tokens=150,
+            temperature=0.7,
+            model="gpt-4o-mini",
+            stream=False
+        )
+
+        # Parse the model’s reply as JSON
+        try:
+            result = json.loads(response.choices[0].message.content)
+            scores[area]   = result.get("score")
+            feedback[area] = result.get("comment")
+        except Exception:
+            # Fallback if parsing fails
+            scores[area]   = None
+            feedback[area] = response.choices[0].message.content.strip()
+
+    # 4) Return it all in one go
+    return JSONResponse({
+        "scores": scores,
+        "feedback": feedback
+    })
 
 INDEX_PATH = os.path.join("Static", "index.html")
 

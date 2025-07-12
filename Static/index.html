@@ -129,6 +129,7 @@
         <li id="SCENARIO">Scenario Setup</li>
         <li id="PLAN">Negotiation Plan</li>
         <li id="CHAT">Roleplay Chatbot</li>
+        <li id="FEEDBACK">Performance Feedback</li>
       </ul>
     </div>
 
@@ -153,13 +154,15 @@
       DATA_POLICY: 'DATA_POLICY',
       SCENARIO:     'SCENARIO',
       PLAN:         'PLAN',
-      CHAT:         'CHAT'
+      CHAT:         'CHAT',
+      FEEDBACK: 'FEEDBACK'
     };
     const PAGE_LABELS = {
       DATA_POLICY:  'Data Usage Policy',
       SCENARIO:     'Scenario Setup',
       PLAN:         'Negotiation Plan',
-      CHAT:         'Roleplay Chatbot'
+      CHAT:         'Roleplay Chatbot',
+      FEEDBACK:     'Performance Feedback'
     };
     // Sample scenarios:
     const defaultScenarioOne = `1) Scenario and business context:
@@ -274,7 +277,8 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
    );
  }
 
-    function ChatbotUI() {
+    function ChatbotUI({ goNext, onSession }) {
+      const [sessionID, setSessionID] = useState(null);
       const [isRecording, setIsRecording] = useState(false);
       const [conversation, setConversation] = useState([]);
       const ws = useRef(), audioCtx = useRef(), scriptRef = useRef(), gainRef = useRef(), playback = useRef(0), scheduled = useRef([]), endRef = useRef(null);
@@ -333,6 +337,7 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
               audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
             }
 
+            console.log('🚀 startConversation(): opening WS');
             ws.current = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') +
                                           '://' +
                                           window.location.host +
@@ -341,7 +346,13 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
             //ws.current.onopen = () => logDebug('WebSocket opened.');
 
             ws.current.onmessage = (evt) => {
+              console.log('📨 raw WS message:', evt.data);
               const r = JSON.parse(evt.data);
+              if (r.type === 'session_id') {
+                setSessionID(r.session_id);
+                onSession(r.session_id);
+                return;
+              }
               switch (r.type) {
                 case 'response.audio_transcript.delta':
                   updateServer(r.item_id, r.delta);
@@ -451,15 +462,95 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
           </div>
         ))}
       <div ref={endRef}></div>
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <button className="btn btn-secondary" onClick={() => stopConversation()}>
+              Stop Conversation
+            </button>
+            <button
+              className="btn btn-primary"
+              style={{ marginLeft: '10px' }}
+              onClick={() => {
+                console.log('🛑 Ending roleplay, going to FEEDBACK');
+                stopConversation();
+                goNext(PAGES.FEEDBACK);
+              }}
+            >
+              End roleplay and get feedback
+            </button>
+          </div>
     </div>
   );
 }
+
+    function FeedbackPage({ goNext, sessionID }) {
+      const areas = [
+        'Anchoring',
+        'Priority Disclosure Timing',
+        'Integrative Bargaining',
+        'Trust and Reciprocity',
+        'Perspective Taking',
+        'Team Negotiation'
+      ];
+      const [scores, setScores] = useState({});
+      const [feedback, setFeedback] = useState({});
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+  if (!sessionID) return;
+
+  console.log('🛰️  FeedbackPage: about to fetch with sessionID =', sessionID);
+  setLoading(true);
+
+  fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionID })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error(res.statusText);
+      console.log('🛰️  FeedbackPage: feedback endpoint responded with status', res.status);
+      return res.json();
+    })
+    .then(data => {
+      console.log('🛰️  FeedbackPage: received data', data);
+      setScores(data.scores);
+      setFeedback(data.feedback);
+    })
+    .catch(err => {
+      console.error('🛰️  FeedbackPage: fetch error', err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });  // ← semicolon here terminates the entire chained expression
+}, [sessionID]);
+
+      if (loading) {
+        return <div className="page-content"><h2>Loading feedback...</h2></div>;
+      }
+
+      return (
+        <div className="page-content">
+          <h2>Performance Feedback</h2>
+          {areas.map(area => (
+            <div key={area} style={{ marginBottom: '20px' }}>
+              <h4>{area}</h4>
+              <p><strong>Score:</strong> {scores[area] || 'N/A'}</p>
+              <p>{feedback[area] || 'No feedback available.'}</p>
+            </div>
+          ))}
+          <button className="btn btn-primary" onClick={() => goNext(PAGES.DATA_POLICY)}>
+            Restart Course
+          </button>
+        </div>
+      );
+    }
 
     function App() {
       const [page, setPage] = useState(PAGES.DATA_POLICY);
       const [completedPages, setCompletedPages] = useState([]);
       const [scenario, setScenario] = useState(defaultScenarioOne);
       const [plan, setPlan] = useState('# Negotiation Plan\n\n');
+      const [sessionID, setSessionID]           = useState(null);
 
       const generatePlan = async () => {
             setPage(PAGES.PLAN);
@@ -548,7 +639,18 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
             />
           )}
           {page === PAGES.PLAN        && <NegotiationPlan plan={plan} setPlan={setPlan} goNext={goNext} />}
-          {page === PAGES.CHAT        && <ChatbotUI />}
+          {page === PAGES.CHAT && (
+            <ChatbotUI
+              goNext={goNext}
+              onSession={(id) => setSessionID(id)}
+            />
+          )}
+          {page === PAGES.FEEDBACK && (
+            <FeedbackPage
+              goNext={goNext}
+              sessionID={sessionID}
+            />
+          )}
         </>
       );
     }
