@@ -1,488 +1,137 @@
 <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8" />
-            <title>Chatbot Negotiation - Integrated App</title>
-            <!-- Google Font -->
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" />
-            <!-- React, ReactDOM, Babel, Marked -->
-            <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-            <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-            <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-            <style>
-              :root { --primary-color:#007bff; --secondary-color:#5cb85c; --danger-color:#d9534f; --bg-color:#f0f2f5; --card-bg:#ffffff; --font-family:'Roboto',Arial,sans-serif; --border-radius:8px; --transition-time:.3s; }
-              * { box-sizing: border-box; }
-              body { margin:0; padding:20px; background-color:var(--bg-color); font-family:var(--font-family); color:#333; }
-              h1 { text-align:center; }
-              .nav { background-color:var(--primary-color); color:white; display:flex; justify-content:center; padding:12px; position:sticky; top:0; z-index:1000; }
-              .nav div { margin:0; padding:12px 20px; cursor:pointer; position:relative; }
-              .nav div.active { background:white; color:var(--primary-color); }
-              .page-content { padding:20px; max-width:1000px; margin:20px auto; background:var(--card-bg); border-radius:var(--border-radius); box-shadow:0 2px 8px rgba(0,0,0,0.05);}
-              .hidden { display: none; }
-              .editable-html { border:1px solid #ccc; padding:10px; border-radius:4px; background:white; }
-              textarea.editable-html { width:100%; min-height:200px; font-family:inherit; font-size:1rem; resize:vertical; }
-              .preview { min-height:200px; }
-              .btn { font-size:16px; padding:10px 20px; margin:10px; border:none; border-radius:4px; cursor:pointer; transition:transform var(--transition-time); }
-              .btn:hover { transform:translateY(-2px); }
-              .btn-primary { background-color:var(--primary-color); color:white; }
-              .btn-secondary { background-color:var(--secondary-color); color:white; }
-              .btn-danger { background-color:var(--danger-color); color:white; }
-              #conversation { max-width:800px; margin:20px auto; background:var(--card-bg); padding:20px; border-radius:var(--border-radius); box-shadow:0 2px 8px rgba(0,0,0,0.05); min-height:200px; overflow-y:auto; }
-              .message { padding:10px; margin-bottom:10px; border-radius:4px; }
-              .message.user { background:#e6f7ff; text-align:right; }
-              .message.server { background:#f0f0f0; text-align:left; }
-              .tips-panel {
-                  position: fixed;
-                  top: 190px;
-                  left: 20px;
-                  width: 250px;
-                  background: var(--card-bg);
-                  border-radius: var(--border-radius);
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                  padding: 15px;
-                  z-index: 1000;
-                }
-                .tips-panel ul li {
-                  margin-bottom: 10px; /* Add spacing between <li> elements */
-                }
-              .page-content {
-                  margin-left: 300px; /* Adjust to leave space for the tips panel */
-                }
-              .demo-scenarios {
-                  background: var(--card-bg);
-                  border-radius: var(--border-radius);
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                  padding: 15px;
-                }
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Negotiation Assistant</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root { --primary:#fecb00; --secondary:#333; --bg:#f5f5f5; --card:#fff; --font:'Roboto',sans-serif; --rad:12px; --trans:.3s; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:0; font-family:var(--font); background:var(--bg); color:var(--secondary); }
+    .container { display:flex; min-height:100vh; }
+    .sidebar { width:300px; background:var(--primary); padding:20px; }
+    .logo { text-align:center; margin-bottom:20px; }
+    .logo img { max-width:100px; border-radius:var(--rad); }
+    ul { list-style:none; padding:0; margin:0; }
+    .chapter > div, .sub-item { cursor:pointer; padding:8px 10px; border-radius:var(--rad); transition:background var(--trans); display:flex; align-items:center; }
+    .chapter > div:hover, .sub-item:hover { background:rgba(0,0,0,0.1); }
+    .completed > div::before, .sub-item.completed::before { content:'✔'; color:green; margin-right:6px; }
+    .completed > div, .sub-item.completed { background:rgba(0,0,0,0.2); }
+    .active > div, .sub-item.active { background:rgba(255,255,255,0.3); }
+    .sub-list { padding-left:15px; }
+    .arrow { margin-right:8px; font-size:0.8em; }
+    .content { flex:1; padding:20px; }
+    .page-content { background:var(--card); border-radius:var(--rad); padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); min-height:calc(100vh - 40px); }
+    .next-btn { margin-top:20px; font-size:16px; padding:10px 20px; border:none; border-radius:var(--rad); cursor:pointer; background:var(--secondary); color:#fff; transition:background var(--trans); }
+    .next-btn:hover { background:rgba(0,0,0,0.8); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react,env">
+    const { useState } = React;
+    const CHAPTERS = [
+      { key: 'STRUCTURE', label: 'Structure of a negotiation', subs: [
+        { key: 'ESTABLISH_OBJECTIVES', label: 'Establish objectives' },
+        { key: 'ESTABLISH_BOUNDARIES', label: 'Establish boundaries' },
+        { key: 'GENERATE_OPTIONS', label: 'Generate options' },
+        { key: 'OFFERS_CONCESSIONS', label: 'Make offers and concessions' }
+      ]},
+      { key: 'TACTICS', label: 'Key Tactics', subs: [
+        { key: 'ANCHORING', label: 'Anchoring' },
+        { key: 'PRIORITY_TIMING', label: 'Priority Disclosure Timing' },
+        { key: 'INTEGRATIVE', label: 'Integrative Bargaining' },
+        { key: 'PERSPECTIVE', label: 'Perspective Taking' },
+        { key: 'TEAM', label: 'Team Negotiation' }
+      ]},
+      { key: 'MEDIUM', label: 'Negotiating medium', subs: [
+        { key: 'FACE_TO_FACE', label: 'Face-to-face' },
+        { key: 'VIDEO_CONF', label: 'Video-conferencing' },
+        { key: 'CHAT_EMAIL', label: 'Chat/Email' }
+      ]}
+    ];
+    const SEQUENCE = CHAPTERS.flatMap(ch => [ch.key, ...ch.subs.map(s => s.key)]).concat('SCENARIO');
 
-              .demo-scenarios .scenario {
-                  margin-bottom: 15px;
-                  cursor: pointer;
-                  text-align: center;
-                }
-
-              .demo-scenarios .scenario img {
-                  transition: transform var(--transition-time);
-                }
-
-              .demo-scenarios .scenario:hover img {
-                  transform: scale(1.05);
-                }
-
-              .demo-scenarios .scenario p {
-                  margin-top: 10px;
-                  font-weight: bold;
-                }
-              #debug { max-width:800px; margin:20px auto; padding-top:10px; border-top:1px solid #ccc; font-size:14px; color:#555; }
-            </style>
-          </head>
-          <body>
-            <h1>Negotiation Preparation Assistant</h1>
-            <div id="app-container"></div>
-            <div id="debug"></div>
-
-            <script type="text/babel">
-              const { useState, useRef, useEffect } = React;
-              const PAGES = { SCENARIO: 'SCENARIO', PLAN: 'PLAN', CHAT: 'CHAT' };
-              const PAGE_LABELS = { SCENARIO: 'Scenario Setup', PLAN: 'Negotiation Plan', CHAT: 'Chatbot' };
-              const defaultScenarioOne = `1) Scenario and business context:
-An audit engagement for a multinational manufacturing company has overrun the expected timeline due to late delivery of financial data and complexities related to overseas subsidiaries.
-
-2) Facts and figures:
-- Original budget: $500,000
-- Actual cost incurred: $675,000
-- Overrun: $175,000 (35%)
-
-3) Reasons for overruns:
-- Delays in receiving trial balances from regional teams
-- Unexpected regulatory disclosures required additional audit work
-- Staffing challenges and illness impacted the audit team's schedule
-
-4) Tone and demeanour of customer:
-The client is frustrated with the overrun but values the audit team's diligence. They are cost-conscious and expect clear justification. The tone should be apologetic but firm.`;
-
-            const defaultScenarioTwo = `1) Scenario and business context:
-An external audit engagement for a midstream oil and gas company operating across North America has significantly exceeded the original scope. The audit was triggered by a corporate restructuring and a series of joint venture (JV) asset swaps, which introduced unexpected layers of complexity in revenue recognition, pipeline ownership, and environmental compliance reporting.
-
-2) Facts and figures:
--Original budget: $600,000
--Actual cost incurred: $815,000
--Overrun: $215,000 (35.8%)
-
-3) Reasons for overruns:
--Delays in finalizing JV agreements led to multiple restatements of revenue and asset schedules
--New EPA reporting requirements resulted in additional audit procedures for environmental liabilities
--Several audit findings required extended consultation with external legal and tax advisors
--A cyber incident at a field office caused temporary data access issues, slowing down testing timelines
-
-4) Tone and demeanour of customer:
-The client is pragmatic but under pressure from internal stakeholders to manage costs tightly. While they acknowledge the audit complexities were partly due to their own delays and internal changes, they are pushing back on cost escalations. The tone should be measured, collaborative, and solution-oriented, emphasizing transparency and shared accountability.`;
-
-            const defaultScenarioThree = `1) Scenario and business context:
-An audit engagement for a publicly listed SaaS company has exceeded its original scope following a year of rapid international expansion and a late-stage acquisition of an AI startup. The audit became more complex due to revenue recognition challenges under ASC 606, data integrity issues in the company’s internal reporting systems, and high employee turnover in finance.
-
-2) Facts and figures:
--Original budget: $450,000
--Actual cost incurred: $635,000
--Overrun: $185,000 (41%)
-
-3) Reasons for overruns:
--Multiple bundled contracts with vague performance obligations required deep technical reviews
--Integration of the acquired startup was incomplete, leading to inconsistent financial records and manual reconciliations
--Cloud-based financial systems experienced versioning issues, requiring time-consuming data validation and re-performance of tests
--Late adjustments to stock-based compensation accounting added additional rounds of audit review
-
-4) Tone and demeanour of customer:
-The client is detail-oriented and operates in a fast-paced, high-stakes environment. They are frustrated by the cost increase, especially given internal perceptions of tech-enabled efficiency. However, they value precision and are likely to respond to data-backed reasoning. The tone should be professional, assertive, and focused on explaining the necessity and value of the additional work.`;
-
-              function HeaderNav({ currentPage, setCurrentPage }) {
-                return (
-                  <div className="nav">
-                    {Object.entries(PAGE_LABELS).map(([key,label]) => (
-                      <div
-                        key={key}
-                        className={currentPage === key ? 'active' : ''}
-                        onClick={() => setCurrentPage(key)}
-                      >
-                        {label}
-                      </div>
-                    ))}
+    function Sidebar({ current, completed, onSelect }) {
+      const [expanded, setExpanded] = useState({});
+      return (
+        <div className="sidebar">
+          <div className="logo"><img src="/Static/logo.png" alt="Logo" /></div>
+          <ul>
+            {CHAPTERS.map(ch => {
+              const hasActiveSub = ch.subs.some(s => s.key === current);
+              const isExpanded = expanded[ch.key] || ch.key === current || hasActiveSub;
+              return (
+                <li key={ch.key} className={`chapter ${completed.includes(ch.key) ? 'completed' : ''} ${ch.key === current ? 'active' : ''}`}>
+                  <div onClick={() => setExpanded(e => ({ ...e, [ch.key]: !e[ch.key] }))}>
+                    <span className="arrow">{isExpanded ? '▼' : '▶'}</span>
+                    {ch.label}
                   </div>
-                );
-              }
+                  {isExpanded && (
+                    <ul className="sub-list">
+                      {ch.subs.map(s => (
+                        <li key={s.key}
+                            className={`sub-item ${completed.includes(s.key) ? 'completed' : ''} ${s.key === current ? 'active' : ''}`}
+                            onClick={() => onSelect(s.key)}>
+                          {s.label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+            <li className={`sub-item ${completed.includes('SCENARIO') ? 'completed' : ''} ${current === 'SCENARIO' ? 'active' : ''}`} onClick={() => onSelect('SCENARIO')}>
+              Scenario Setup
+            </li>
+          </ul>
+        </div>
+      );
+    }
 
-              function ScenarioEditor({ scenario, setScenario, onGenerate }) {
-                return (
-                  <div className="page-content" style={{ display: 'flex' }}>
-                      {/* Demo Scenarios Panel */}
-                      <div className="demo-scenarios" style={{ marginRight: '20px', width: '250px' }}>
-                        <h3>Demo Scenarios</h3>
-                        <div className="scenario" onClick={() => setScenario(defaultScenarioOne)}>
-                          <img src="/Static/Scenario_1.png"  alt="Scenario 1" style={{ width: '50%', borderRadius: '4px' }} />
-                          <p>Scenario 1</p>
-                        </div>
-                        <div className="scenario" onClick={() => setScenario(defaultScenarioTwo)}>
-                          <img src="/Static/Scenario_2.png" alt="Scenario 2" style={{ width: '50%', borderRadius: '4px' }} />
-                          <p>Scenario 2</p>
-                        </div>
-                        <div className="scenario" onClick={() => setScenario(defaultScenarioThree)}>
-                          <img src="/Static/Scenario_3.png" alt="Scenario 3" style={{ width: '50%', borderRadius: '4px' }} />
-                          <p>Scenario 3</p>
-                        </div>
-                      </div>
-
-                      {/* Scenario Setup Panel */}
-                      <div style={{ flex: 1 }}>
-                        <h2>Scenario Setup</h2>
-                        <p>Input your scenario details here, the more detail the better your plan will be.</p>
-                        <textarea
-                          className="editable-html"
-                          value={scenario}
-                          onChange={e => setScenario(e.target.value)}
-                        />
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => {
-                            onGenerate();
-                          }}
-                        >
-                          Generate Negotiation Plan
-                        </button>
-                      </div>
-                    </div>
-                );
-              }
-
-              function NegotiationPlan({ plan, setPlan }) {
-                const [isEditing, setIsEditing] = useState(true);
-
-                return (
-                  <div className="page-content">
-                    <h3>Negotiation Plan</h3>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setIsEditing(!isEditing)}
-                    >
-                      {isEditing ? 'Preview' : 'Edit'}
-                    </button>
-                    {isEditing ? (
-                      <textarea
-                        className="editable-html"
-                        value={plan}
-                        onChange={(e) => setPlan(e.target.value)}
-                      />
-                    ) : (
-                      <div
-                        className="editable-html preview"
-                        dangerouslySetInnerHTML={{ __html: marked.parse(plan) }}
-                      />
-                    )}
-                  </div>
-                );
-              }
-
-              function ChatbotUI() {
-      const [isRecording,setIsRecording]=useState(false);
-      const [conversation,setConversation]=useState([]);
-      const ws=useRef(null), audioCtx=useRef(null), mediaRef=useRef(null);
-      const scriptRef=useRef(null), srcRef=useRef(null), gainRef=useRef(null);
-      const playback=useRef(0), scheduled=useRef([]), endRef=useRef(null);
-      const SAMPLE_RATE=24000;
-
-      useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[conversation]);
-
-      const logDebug=msg=>{
-        const dbg=document.getElementById('debug');
-        if(dbg){ const p=document.createElement('p'); p.textContent=`[${new Date().toLocaleTimeString()}] ${msg}`; dbg.appendChild(p);} };
-
-      // Audio helpers
-      function createWav(buffer,rate,channels=1){ /* as before */
-        const pcm=new Uint8Array(buffer); const header=new ArrayBuffer(44); const view=new DataView(header);
-        function wstr(v,o,s){ for(let i=0;i<s.length;i++) view.setUint8(o+i,s.charCodeAt(i)); }
-        wstr(view,0,'RIFF'); view.setUint32(4,36+pcm.length,true);
-        wstr(view,8,'WAVE'); wstr(view,12,'fmt '); view.setUint32(16,16,true);
-        view.setUint16(20,1,true); view.setUint16(22,channels,true); view.setUint32(24,rate,true);
-        view.setUint32(28,rate*channels*2,true); view.setUint16(32,channels*2,true);
-        view.setUint16(34,16,true); wstr(view,36,'data'); view.setUint32(40,pcm.length,true);
-        const buf=new Uint8Array(header.byteLength+pcm.length); buf.set(new Uint8Array(header),0); buf.set(pcm,header.byteLength);
-        return buf.buffer;
-      }
-      function b64ToBuf(b64){ const bin=atob(b64), len=bin.length, u=new Uint8Array(len); for(let i=0;i<len;i++)u[i]=bin.charCodeAt(i); return u.buffer; }
-      function downsample(input, inRate, outRate){ if(outRate===inRate) return input; const ratio=inRate/outRate; const newLen=Math.round(input.length/ratio); const out=new Float32Array(newLen);
-        let resI=0, bufI=0; while(resI<newLen){ const next=Math.round((resI+1)*ratio); let sum=0,count=0; for(let i=bufI;i<next&&i<input.length;i++){ sum+=input[i]; count++; }
-          out[resI]=count?sum/count:0; resI++; bufI=next; }
-        return out;
-      }
-      function floatTo16(input){ const out=new Int16Array(input.length); input.forEach((v,i)=>out[i]=v<0?v*0x8000:v*0x7FFF); return out; }
-
-      // Message handlers
-      const updateServer=(id,delta)=>{/* identical to index.html */
-        if(!delta.trim())return; setConversation(prev=>{ const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
-          if(idx>=0){ if(prev[idx].finalized) return prev; const upd={...prev[idx],text:prev[idx].text+delta}; const copy=[...prev]; copy[idx]=upd; return copy;}
-          return [...prev,{item_id:id,role:'server',text:delta,finalized:false,timestamp:Date.now()}]; }); };
-      const finalizeServer=(id,trans,ts)=>{ setConversation(prev=>{ const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
-          if(idx>=0){ const txt=trans.trim()||prev[idx].text; const upd={...prev[idx],text:txt,finalized:true,timestamp:ts}; const copy=[...prev]; copy[idx]=upd; return copy;}
-          if(trans.trim()) return [...prev,{item_id:id,role:'server',text:trans,finalized:true,timestamp:ts}]; return prev; }); };
-      const updateUser=(id,trans,ts)=>{ if(!trans.trim())return; setConversation(prev=>{ const last=prev[prev.length-1]; if(last&&last.role==='user'){ const merged={...last,text:(last.text.trim()+' '+trans.trim()).trim(),timestamp:ts}; return [...prev.slice(0,-1),merged]; } return [...prev,{item_id:id,role:'user',text:trans,finalized:true,timestamp:ts}]; }); };
-      const addUser=(txt,ts=Date.now())=>{ if(!txt.trim())return; setConversation(prev=>[...prev,{role:'user',text:txt,finalized:true,timestamp:ts}]); };
-      const playChunk=b64=>{ const buf=b64ToBuf(b64); const wav=createWav(buf,SAMPLE_RATE); audioCtx.current.decodeAudioData(wav,decoded=>{
-          const now=audioCtx.current.currentTime; if(playback.current<now) playback.current=now;
-          const src=audioCtx.current.createBufferSource(); src.buffer=decoded; src.connect(audioCtx.current.destination);
-          src.start(playback.current); scheduled.current.push(src); playback.current+=decoded.duration;
-        },e=>logDebug('Decode error '+e)); };
-
-      async function startConversation() {
-          try {
-            if (!audioCtx.current) {
-              audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            ws.current = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') +
-                                          '://' +
-                                          window.location.host +
-                                          '/conversation'
-                                        );
-            //ws.current.onopen = () => logDebug('WebSocket opened.');
-
-            ws.current.onmessage = (evt) => {
-              const r = JSON.parse(evt.data);
-              switch (r.type) {
-                case 'response.audio_transcript.delta':
-                  updateServer(r.item_id, r.delta);
-                  break;
-                case 'response.audio_transcript.done':
-                  finalizeServer(r.item_id, r.transcript, r.timestamp);
-                  break;
-                case 'conversation.item.input_audio_transcription.completed':
-                  r.item_id
-                    ? updateUser(r.item_id, r.transcript, r.timestamp)
-                    : addUser(r.transcript, r.timestamp);
-                  break;
-                case 'response.audio.delta':
-                  playChunk(r.delta);
-                  break;
-                case 'response.audio.done':
-                    finalizeServer(r.item_id, '', r.timestamp);
-                    break;
-                case 'response.done':
-                    // No action needed for this response type
-                    break;
-                case 'input_audio_buffer.speech_started':
-                  scheduled.current.forEach((s) => {
-                    try {
-                      s.stop();
-                    } catch {}
-                  });
-                  scheduled.current = [];
-                  playback.current = audioCtx.current.currentTime;
-                  break;
-                case 'input_audio_buffer.speech_stopped':
-                  //logDebug('Speech stopped. Finalizing user transcription...');
-                  setConversation((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.role === 'user' && !last.finalized) {
-                      const finalized = { ...last, finalized: true };
-                      return [...prev.slice(0, -1), finalized];
-                    }
-                    return prev;
-                  });
-                  break;
-                default:
-                  logDebug(`Unhandled message type: ${r.type}`);
-              }
-            };
-
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRef.current = stream;
-
-            const srcNode = audioCtx.current.createMediaStreamSource(stream);
-            scriptRef.current = audioCtx.current.createScriptProcessor(4096, 1, 1);
-            gainRef.current = audioCtx.current.createGain();
-            gainRef.current.gain.value = 0;
-
-            scriptRef.current.onaudioprocess = (e) => {
-              const inData = e.inputBuffer.getChannelData(0);
-              const down = downsample(inData, audioCtx.current.sampleRate, SAMPLE_RATE);
-              const pcm = floatTo16(down);
-              const b64 = window.btoa(String.fromCharCode(...new Uint8Array(pcm.buffer)));
-              if (ws.current.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify({ audio_data: b64 }));
-              }
-            };
-
-            srcNode.connect(scriptRef.current);
-            scriptRef.current.connect(gainRef.current);
-            gainRef.current.connect(audioCtx.current.destination);
-
-            setIsRecording(true);
-            //logDebug('Conversation started.');
-          } catch (e) {
-            logDebug('Error starting: ' + e);
-          }
-        }
-
-      function stopConversation(){ scriptRef.current?.disconnect(); srcRef.current?.disconnect(); gainRef.current?.disconnect(); ws.current?.close(); setIsRecording(false); /* logDebug('Conversation stopped.'); */ }
-
+    function Page({ label, onMarkNext, showNext }) {
       return (
         <div className="page-content">
-            <div className="tips-panel">
-            <h3>Tips and Tricks</h3>
-            <ul>
-              <li>If the CFO asks to see documentation say: <br /><br />
-              <b><i>"Can we move the roleplay to the next day where you've seen  the documentation?"</i></b>
-              </li>
+          <h2>{label}</h2>
+          <p>Content for {label}…</p>
+          {showNext && <button className="next-btn" onClick={onMarkNext}>Mark as complete & Next</button>}
+        </div>
+      );
+    }
 
-              <li>Once you're done say: <br /><br />
-              <b><i>""End the roleplay and give me feedback"</i></b>
-              </li>
-            </ul>
-          </div>
-          <h2>Role play chat</h2>
-          <div style={{textAlign:'center'}}>
-            {isRecording
-              ?<button className="btn btn-danger" onClick={stopConversation}>Stop Conversation</button>
-              :<button className="btn btn-secondary" onClick={startConversation}>Start Conversation</button>
-            }
-          </div>
-          <div id="conversation">
-            {conversation.sort((a,b)=>a.timestamp-b.timestamp).map((m,i)=>(
-              <div key={i} className={`message ${m.role}`}>
-                <strong>{m.role==='user'?'User:':'Server:'}</strong>
-                <p>{m.text}</p>
-                <small>{new Date(m.timestamp).toLocaleTimeString()}</small>
-              </div>
-            ))}
-            <div ref={endRef}></div>
+    function App() {
+      const [page, setPage] = useState(SEQUENCE[0]);
+      const [completed, setCompleted] = useState([]);
+      const idx = SEQUENCE.indexOf(page);
+      const nextKey = SEQUENCE[idx + 1];
+
+      const markAndNext = () => {
+        setCompleted(prev => prev.includes(page) ? prev : [...prev, page]);
+        if (nextKey) setPage(nextKey);
+      };
+
+      const labelMap = SEQUENCE.reduce((acc, key) => {
+        const ch = CHAPTERS.find(c => c.key === key);
+        if (ch) acc[key] = ch.label;
+        else CHAPTERS.forEach(c => c.subs.forEach(s => { if (s.key === key) acc[key] = s.label; }));
+        acc['SCENARIO'] = 'Scenario Setup';
+        return acc;
+      }, {});
+
+      return (
+        <div className="container">
+          <Sidebar current={page} completed={completed} onSelect={setPage} />
+          <div className="content">
+            <Page label={labelMap[page] || 'Coming soon…'} showNext={!!nextKey} onMarkNext={markAndNext} />
           </div>
         </div>
       );
     }
 
-    function AppRouter() {
-      const [page, setPage] = useState(PAGES.SCENARIO);
-      const defaultScenario = defaultScenarioOne;
-      const defaultPlan = `# Negotiation Plan\n## 1) Objectives...`;
-      const [scenario, setScenario] = useState(defaultScenario);
-      const [plan, setPlan] = useState(defaultPlan);
-
-      const generatePlan = async () => {
-  console.log('Generating plan...');
-  console.log('Scenario:', scenario);
-
-  setPage(PAGES.PLAN);
-  setPlan(''); // Clear the plan before starting to stream
-
-  try {
-    const payload = { scenario };
-    console.log('Payload:', payload);
-
-    const resp = await fetch('/api/generate_plan', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!resp.ok) {
-      throw new Error(`HTTP error! status: ${resp.status}`);
-    }
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let partialPlan = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      console.log('Received chunk:', chunk);
-      const lines = chunk.split('\n').filter(line => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.substring(6)).chunk;
-          console.log('Parsed data:', data);
-          partialPlan += data;
-          setPlan(partialPlan);
-        }
-      }
-    }
-
-    console.log('Streaming completed.');
-  } catch (err) {
-    console.error('Error generating plan:', err);
-  }
-};
-
-      return (
-        <>
-          <HeaderNav currentPage={page} setCurrentPage={setPage} />
-          {/* ADDED: keep components mounted and toggle visibility via CSS */}
-          <div className={page === PAGES.SCENARIO ? '' : 'hidden'}>
-            {/* ADDED: Scenario page visibility control */}
-            <ScenarioEditor
-              scenario={scenario}
-              setScenario={setScenario}
-              onGenerate={generatePlan}
-            />
-          </div>
-          <div className={page === PAGES.PLAN ? '' : 'hidden'}>
-            {/* ADDED: Plan page visibility control */}
-            <NegotiationPlan plan={plan} setPlan={setPlan} />
-          </div>
-          <div className={page === PAGES.CHAT ? '' : 'hidden'}>
-            {/* ADDED: Chat page visibility control; ChatbotUI stays mounted */}
-            <ChatbotUI />
-          </div>
-        </>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('app-container')).render(<AppRouter />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>

@@ -17,6 +17,9 @@ from datetime import datetime
 import asyncio
 import re
 
+#import variables that are used as LLM prompts for various functions within the app
+from promt_config import DEFAULT_SCENARIO, ROLE_PLAY_PROMPT, SYSTEM_PLAN_PROMPT, FEEDBACK_SYSTEM_PROMPT, FEEDBACK_USER_TEMPLATE, FEEDBACK_AREAS
+
 
 load_dotenv()
 # Configure logging
@@ -61,16 +64,22 @@ def save_message(session_id, speaker, content, created_at):
 async def message_worker(queue: asyncio.Queue):
     logging.info("message_worker: starting up")
     while True:
-        session_id, speaker, content, created_at = await queue.get()
-        logging.info(f"message_worker: dequeued → session={session_id!r}, speaker={speaker}, content={content!r}")
+        record = await queue.get()
         try:
-            # Offload the blocking DB write to a thread
-            await asyncio.to_thread(save_message, session_id, speaker, content, created_at)
-            logging.info(f"message_worker: saved message for session={session_id}")
+            if record[0] == "__new_session__":
+                _, session_id, user_id, started_at = record
+                logging.info(f"message_worker: inserting session {session_id}")
+                await asyncio.to_thread(save_session, session_id, user_id, started_at)
+                logging.info(f"message_worker: saved session {session_id}")
+            else:
+                session_id, speaker, content, created_at = record
+                logging.info(f"message_worker: inserting message for session {session_id}")
+                await asyncio.to_thread(save_message, session_id, speaker, content, created_at)
+                logging.info(f"message_worker: saved message for session {session_id}")
         except Exception as e:
-            logging.error(f"message_worker: FAILED to save message: {e}", exc_info=True)
+                logging.error("message_worker: DB write failed", exc_info=e)
         finally:
-            queue.task_done()
+                queue.task_done()
 
 app = FastAPI()
 
@@ -94,11 +103,7 @@ async def on_startup():
 port = int(os.getenv("PORT", 8000))
 api_key = os.getenv("API_KEY")
 # Initialize the default scenario
-defaultScenario = ("You are playing the role of a Chief Financial Officer (CFO) at a company. "
-                  "You are participating in a tough negotiation with an auditor who is requesting an additional £1 million on top of a £4 million engagement fee. "
-                  "You are firm, skeptical, and very financially disciplined. You ask hard questions, demand clear justification, and challenge vague or emotional reasoning. "
-                  "You speak in a direct, no-nonsense tone. Do not accept excuses or fluff — stay focused on value, results, and accountability. "
-                  "You are willing to say no. Keep your responses concise and authoritative.")
+defaultScenario = DEFAULT_SCENARIO
 
 
 # at module‐scope, create the event and mark the default scenario “ready”
@@ -170,12 +175,8 @@ async def update_default_scenario(scenario: str):
     scenario_ready.clear()
     logging.info("Starting scenario update…")
 
-    role_play_prompt = (
-        "Given the following scenario, define the role-play behavior for the negotiation opponent. "
-        "Your response should be a prompt for a GPT 4o LLM to make it behave as the CFO in the given scenario."
-        "Ensure that the CFO is difficult to negotiate with and the CFO needs deep justification before willing "
-        "to accept higher fees. Give the CEO posh a British accent"
-    )
+    role_play_prompt = ROLE_PLAY_PROMPT
+
     messages = [
         {"role": "system", "content": role_play_prompt},
         {"role": "user",   "content": scenario},
@@ -201,15 +202,7 @@ async def generate_negotiation_plan(scenario: str):
     Internally does a synchronous for chunk in response over the Azure SDK Stream,
     skipping any chunks with no choices or no content.
     """
-    system_prompt = (
-        "You are an expert negotiation coach. "
-        "When given a scenario, produce a structured Markdown plan with sections: "
-        "1) Objectives, 2) BATNA Analysis, 3) Key Tactics, 4) Concession Strategy including what to ask for in return, "
-        "5) A table with the expected rebuttals and suggested responses, 6) Next Steps."
-        "Use the latest findings in negotiation science to inform your plan. So the plan should incorporate:"
-        "Anchoring, Priority Disclosure Timing, Integrative Bargaining, emphasize trust and reciprocity, perspective taking"
-        "and team negotiation. "
-    )
+    system_prompt = SYSTEM_PLAN_PROMPT
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user",   "content": scenario},
@@ -280,8 +273,10 @@ async def conversation_endpoint(websocket: WebSocket):
     session_id = str(uuid.uuid4())
     user_id = "anonymous"
     started_at = datetime.utcnow()
-  # Asynchronously insert the new session (user 'anonymous')
-    asyncio.create_task(asyncio.to_thread(save_session, session_id, user_id, started_at))
+  # # Enqueue the new session for non‑blocking insert
+    await app.state.message_queue.put(
+            ("__new_session__", session_id, user_id, started_at)
+    )
     await websocket.send_text(json.dumps({
         "type": "session_id",
         "session_id": session_id
@@ -292,7 +287,7 @@ async def conversation_endpoint(websocket: WebSocket):
         async with websockets.connect(chat_endpoint) as azure_ws:
             logging.info("Connection with Azure API established.")
 
-            # Update session with input_audio_transcription enabled and language-teacher instructions.
+            # Update session with input_audio_transcription enabled and instructions.
             session_update = {
                 "type": "session.update",
                 "session": {
@@ -304,10 +299,7 @@ async def conversation_endpoint(websocket: WebSocket):
                     "instructions": defaultScenario,
                     "voice": "ash",
                     "turn_detection": {
-                        "type": "server_vad",
-                        "threshold": 0.25,
-                        "prefix_padding_ms": 300,
-                        "silence_duration_ms": 200
+                        "type": "semantic_vad"
                     },
                 }
             }
@@ -509,14 +501,7 @@ async def generate_feedback(request: Request):
     print('transcript: ',transcript)
 
     # 2) Define your feedback areas
-    areas = [
-        'Anchoring',
-        'Priority Disclosure Timing',
-        'Integrative Bargaining',
-        'Trust and Reciprocity',
-        'Perspective Taking',
-        'Team Negotiation'
-    ]
+    areas = FEEDBACK_AREAS
 
     scores = {}
     feedback = {}
@@ -524,29 +509,15 @@ async def generate_feedback(request: Request):
     # 3) For each area, call GPT‑4o‑mini synchronously
     for area in areas:
         # You can customize this generic prompt for each area later
-        user_prompt = (
-                f"You are a negotiation coach. Given the following transcript:\n\n"
-                f"{transcript}\n\n"
-                f"Please evaluate the negotiator in the user role on the skill: {area}.\n"
-                f"Reference the latest reasearch into why this skill is important in negotiation.\n"
-                f"Assess how well the user applied this skill in the conversation.\n"
-                f"Reference specific things the negotiator said and analyse the relevance offering ways to improve.\n"
-                f"Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. Be brutal in your assessment, "
-                f"don't be shy to give a score 1 or 2 if there is no evidence of performance against the skill above. Only give a score above 3 if there "
-                f"is reasonable evidence that the user knew about the skill's significance in negotiation.\n"
-                f"Provide a brief comment explaining your score.\n"                                
-                "ONLY output a raw JSON object, with NO markdown, code fences, or extra text. "
-                "It must look like {\"score\":<1-10>,\"comment\":\"...\"} and nothing else."
-                )
+        user_content = FEEDBACK_USER_TEMPLATE.format(
+            transcript=transcript,
+            area=area
+        )
 
         response = mini_client.chat.completions.create(
             messages=[
-                {"role": "system", "content": "You provide comprehensive, actionable feedback. Your role is a negotiation coach that references the lates"
-                                              "academic research in giving feedback and coaching negotiators."
-                                              "Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. Be brutal in your assessment, "
-                f"don't be shy to give a score 1 or 2 if there is no evidence of performance against the skill above. Only give a score above 3 if there "
-                f"is reasonable evidence that the user knew about the skill's significance in negotiation"},
-                {"role": "user",   "content": user_prompt}
+                {"role": "system", "content": FEEDBACK_SYSTEM_PROMPT},
+                {"role": "user", "content": user_content}
             ],
             max_tokens=150,
             temperature=0.7,
