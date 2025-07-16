@@ -69,7 +69,11 @@ async def message_worker(queue: asyncio.Queue):
             if record[0] == "__new_session__":
                 _, session_id, user_id, started_at = record
                 logging.info(f"message_worker: inserting session {session_id}")
-                await asyncio.to_thread(save_session, session_id, user_id, started_at)
+                  # ensure FK safety
+                ready_evt = app.state.session_ready.get(session_id)
+                if ready_evt:  # wait only if the session isn’t persisted yet
+                    await ready_evt.wait()
+                await asyncio.to_thread(save_message, session_id, speaker, content, created_at)
                 logging.info(f"message_worker: saved session {session_id}")
             else:
                 session_id, speaker, content, created_at = record
@@ -95,9 +99,16 @@ app.mount(
 async def on_startup():
     # Initialize the queue and start the DB writer background task
     app.state.message_queue = asyncio.Queue()
+    app.state.session_ready: dict[str, asyncio.Event] = {}
     asyncio.create_task(message_worker(app.state.message_queue))
     logging.info("on_startup: message_queue created and worker spawned")
 
+async def _persist_session(session_id, user_id, started_at, ready_evt: asyncio.Event):
+    try:
+        await asyncio.to_thread(save_session, session_id, user_id, started_at)
+        logging.info("Session %s persisted", session_id)
+    finally:
+        ready_evt.set()                      # <─ unblock message_worker
 
 
 port = int(os.getenv("PORT", 8000))
@@ -274,9 +285,9 @@ async def conversation_endpoint(websocket: WebSocket):
     user_id = "anonymous"
     started_at = datetime.utcnow()
   # # Enqueue the new session for non‑blocking insert
-    await app.state.message_queue.put(
-            ("__new_session__", session_id, user_id, started_at)
-    )
+    evt = asyncio.Event()
+    app.state.session_ready[session_id] = evt
+    asyncio.create_task(_persist_session(session_id, user_id, started_at, evt))
     await websocket.send_text(json.dumps({
         "type": "session_id",
         "session_id": session_id

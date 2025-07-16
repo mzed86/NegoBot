@@ -3,98 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <title>Negotiation Assistant</title>
-  <!-- Google Font -->
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Fonts & libs -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" />
-  <!-- React, ReactDOM, Babel, Marked.js -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Styles -->
   <style>
     :root {
-      --primary-color: #fecb00;    /* EY yellow */
-      --secondary-color: #333333;  /* EY dark gray */
-      --bg-color: #f5f5f5;         /* Light gray background */
-      --card-bg: #ffffff;          /* White card background */
-      --font-family: 'Roboto', Arial, sans-serif;
-      --border-radius: 12px;
-      --transition-time: 0.3s;
+      --primary:#fecb00; --secondary:#333333; --bg:#f5f5f5; --card:#ffffff;
+      --font:'Roboto',Arial,sans-serif; --rad:12px; --trans:.3s;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 0;
-      font-family: var(--font-family);
-      background-color: var(--bg-color);
-      color: var(--secondary-color);
-      display: flex; flex-direction: column; min-height: 100vh;
+    *{box-sizing:border-box;}
+    body{margin:0;padding:0;font-family:var(--font);background:var(--bg);color:var(--secondary);}
+    .container{display:flex;min-height:100vh;}
+
+
+    /* hamburger & mobile drawer */
+    .hamburger{display:none;background:none;border:none;font-size:28px;padding:10px;
+               position:fixed;top:10px;left:10px;z-index:1001;color:var(--secondary);}
+
+   @media (max-width:768px){
+     .hamburger{display:block;}
+     .sidebar{
+       position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);
+       transition:transform .3s ease;z-index:1000;width:280px; /* shrink a bit */
+     }
+     .sidebar.open{transform:translateX(0);}   /* toggled state */
+     .container{padding-left:0;}               /* avoid left gap */
+   }
+    /* --- mobile tweaks ---------------------------------------------------- */
+  @media (max-width:768px){
+    /* keep the drawer fixed on the left */
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;
+      width:280px;
+      padding:10px;
+      background:var(--primary);
+      overflow-y:auto;            /* vertical scroll if menu is long */
+      transform:translateX(-100%);
+      transition:transform .3s ease;
     }
-    .container { display: flex; flex: 1; }
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      width: 300px; background-color: var(--primary-color);
-      color: var(--secondary-color);
-      padding: 20px; display: flex; flex-direction: column; gap: 20px;
-      border-radius: var(--border-radius);
-      position: relative;
+    .sidebar.open{transform:translateX(0);}   /* toggled state */
+
+    /* make the list vertical again */
+    .sidebar ul{
+      display:flex;
+      flex-direction:column;      /* stacked items */
+      gap:6px;
+      padding-right:10px;
     }
-    .logo {
-        position: static;        /* kill any “absolute” you may have left */
-        align-self: center;      /* center it horizontally */
-        max-width: 80%;          /* optional—so it never gets too huge */
-      }
-    .logo img { max-width: 100px; border-radius: var(--border-radius); }
-    .sidebar h2 { font-size: 1.5rem; margin-bottom: 10px; }
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar li {
-      padding: 10px; margin-bottom: 8px;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      transition: background-color var(--transition-time);
-      display: flex; align-items: center;
-    }
-    .sidebar li:hover { background-color: rgba(0,0,0,0.1); }
-    .sidebar li.completed { background-color: rgba(0,0,0,0.2); }
-    .sidebar li.completed::before {
-      content: '✔'; color: green; margin-right: 8px;
-    }
-    .content {
-      flex: 1; padding: 20px;
-      overflow-y: auto; background-color: var(--bg-color);
-    }
-    .page-content {
-      background: var(--card-bg);
-      border-radius: var(--border-radius);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      padding: 20px; margin-bottom: 20px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    .editable-html {
-            flex: 1;
-            width:100%;
-            height:100%;
-            min-height:300px;
-            padding:10px;
-            border:1px solid #ccc;
-            border-radius:4px;
-            background:#fff;
-            font-family:inherit;
-            font-size:1rem;
-            resize:vertical;
-            }
-    .preview { min-height:200px; }
-    .nav { display:none; } /* kill any leftover header nav */
-    .btn {
-      font-size:16px; padding:10px 20px; margin:10px 0;
-      border:none; border-radius:var(--border-radius);
-      cursor:pointer; transition:transform var(--transition-time);
-    }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary { background-color:var(--primary-color); color:var(--secondary-color); }
-    .btn-secondary { background-color:#333; color:#fff; }
-    .btn-danger { background-color:#d9534f; color:#fff; }
+
+    .container{padding-left:0;flex-direction:column;}
+    .content{padding:10px;}
+    .page-content{min-height:auto;} /* avoid huge blank space */
+    .demo-scenarios .scenario img{width:100%;}
+  }
+    /* Sidebar */
+    .sidebar{width:300px;background:var(--primary);padding:20px;display:flex;flex-direction:column;}
+    .logo{text-align:center;margin-bottom:20px;}
+    .logo img{max-width:100px;border-radius:var(--rad);}
+    ul{list-style:none;padding:0;margin:0;}
+    .chapter>div,.sub-item,.single-item{cursor:pointer;padding:8px 10px;border-radius:var(--rad);transition:background var(--trans);display:flex;align-items:center;}
+    .chapter>div:hover,.sub-item:hover,.single-item:hover{background:rgba(0,0,0,.1);}
+    .completed>div::before,.sub-item.completed::before,.single-item.completed::before{content:'✔';color:green;margin-right:6px;}
+    .completed>div,.sub-item.completed,.single-item.completed{background:rgba(0,0,0,.2);}
+    .active>div,.sub-item.active,.single-item.active{background:rgba(255,255,255,.3);}
+    .sub-list{padding-left:15px;}
+    .arrow{margin-right:8px;font-size:.8em;}
+    /* Main content */
     .demo-scenarios { margin-bottom:20px; }
     .demo-scenarios .scenario { cursor:pointer; text-align:center; margin-bottom:15px; }
     .demo-scenarios .scenario img {
@@ -102,44 +82,44 @@
       transition:transform var(--transition-time);
     }
     .demo-scenarios .scenario:hover img { transform:scale(1.05); }
-    #conversation { min-height:200px; overflow-y:auto; }
-    .message { padding:10px; margin-bottom:10px; border-radius:4px; }
-    .message.user   { background:#e6f7ff; text-align:right; }
-    .message.server { background:#f0f0f0; text-align:left; }
-    .footer {
-      text-align:center; padding:10px;
-      background: var(--card-bg); border-top:1px solid #ccc;
-      font-size:0.9rem;
-    }
-    .footer a { margin:0 10px; color:var(--secondary-color); text-decoration:none; }
-    .footer a:hover { text-decoration:underline; }
+    .page-content img{
+    max-width:100%;
+    height:auto;
+    display:block;   /* avoid inline-whitespace gaps */
+  }
+    .content{flex:1;padding:20px;overflow-y:auto;}
+    .page-content{background:var(--card);border-radius:var(--rad);box-shadow:0 2px 8px rgba(0,0,0,.05);padding:20px;min-height:calc(100vh - 40px);display:flex;flex-direction:column;}
+    .editable-html{flex:1;width:100%;min-height:300px;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;font-family:inherit;font-size:1rem;resize:vertical;}
+    .preview{min-height:200px;}
+    .btn{font-size:16px;padding:10px 20px;margin:10px 0;border:none;border-radius:var(--rad);cursor:pointer;transition:transform var(--trans);}
+    .btn:hover{transform:translateY(-2px);}
+    .btn-primary{background:var(--primary);color:var(--secondary);}
+    .btn-secondary{background:#333;color:#fff;}
+    .btn-danger{background:#d9534f;color:#fff;}
+    .message{padding:10px;margin-bottom:10px;border-radius:4px;}
+    .message.user{background:#e6f7ff;text-align:right;}
+    .message.server{background:#f0f0f0;text-align:left;}
+    .footer{text-align:center;padding:10px;background:var(--card);border-top:1px solid #ccc;font-size:.9rem;}
+    .footer a{margin:0 10px;color:var(--secondary);text-decoration:none;}
+    .footer a:hover{text-decoration:underline;}
   </style>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
+  <button id="hamburger" class="hamburger" aria-label="Menu">☰</button>
   <div class="container">
-    <!-- EY Sidebar -->
+    <!-- Sidebar -->
     <div class="sidebar">
-      <div class="logo">
-          <img src="/Static/logo.png" alt="Logo" />
-    </div>
-      <h2>Course Progress</h2>
-      <ul id="progress-list">
-        <li id="DATA_POLICY">Data Usage Policy</li>
-        <li id="SCENARIO">Scenario Setup</li>
-        <li id="PLAN">Negotiation Plan</li>
-        <li id="CHAT">Roleplay Chatbot</li>
-        <li id="FEEDBACK">Performance Feedback</li>
-      </ul>
+      <div class="logo"><img src="/Static/logo.png" alt="Logo" /></div>
+      <ul id="sidebar-list"></ul>
     </div>
 
-    <!-- React mounts here -->
+    <!-- Main -->
     <div class="content">
-      <div id="app-container"></div>
+      <div id="app-root"></div>
     </div>
   </div>
 
-  <!-- EY Footer -->
+  <!-- Footer -->
   <div class="footer">
     <a href="/privacy-policy">Privacy Policy</a>
     <a href="/contact-us">Contact Us</a>
@@ -147,25 +127,141 @@
     <a href="/request-feature">Request a Feature</a>
   </div>
 
-  <!-- React + App Logic -->
+  <!-- React App -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
-    const PAGES = {
-      DATA_POLICY: 'DATA_POLICY',
-      SCENARIO:     'SCENARIO',
-      PLAN:         'PLAN',
-      CHAT:         'CHAT',
-      FEEDBACK: 'FEEDBACK'
-    };
-    const PAGE_LABELS = {
-      DATA_POLICY:  'Data Usage Policy',
-      SCENARIO:     'Scenario Setup',
-      PLAN:         'Negotiation Plan',
-      CHAT:         'Roleplay Chatbot',
-      FEEDBACK:     'Performance Feedback'
-    };
-    // Sample scenarios:
-    const defaultScenarioOne = `1) Scenario and business context:
+
+        /* ----- Markdown content loader --------------------------------------- */
+    function ContentPage({ pageKey, showNext = false, onNext }) {
+      const [html, setHtml] = useState('Loading…');
+
+      useEffect(() => {
+        fetch(`/Static/content/${pageKey}.md`)   /* adjust path if needed */
+          .then(r => {
+            if (!r.ok) throw new Error(r.statusText);
+            return r.text();
+          })
+          .then(md => setHtml(marked.parse(md)))
+          .catch(err => {
+            console.error(err);
+            setHtml('<p>Failed to load content.</p>');
+          });
+      }, [pageKey]);
+
+      return (
+        <div className="page-content">
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+          {showNext && (
+            <button className="btn btn-secondary" onClick={onNext}>
+              Mark as complete &amp; Next
+            </button>
+          )}
+        </div>
+      );
+    }
+
+
+
+    /* ----- 1. NAVIGATION DATA ------------------------------------------------ */
+    const CHAPTERS = [
+      { key:'STRUCTURE', label:'Structure of a negotiation', subs:[
+        { key:'ESTABLISH_OBJECTIVES', label:'Establish objectives' },
+        { key:'ESTABLISH_BOUNDARIES', label:'Establish boundaries' },
+        { key:'GENERATE_OPTIONS', label:'Generate options' },
+        { key:'OFFERS_CONCESSIONS', label:'Make offers & concessions' }
+      ]},
+      { key:'TACTICS', label:'Key Tactics', subs:[
+        { key:'ANCHORING', label:'Anchoring' },
+        { key:'PRIORITY_TIMING', label:'Priority Disclosure Timing' },
+        { key:'INTEGRATIVE', label:'Integrative Bargaining' },
+        { key:'PERSPECTIVE', label:'Perspective Taking' },
+        { key:'TEAM', label:'Team Negotiation' }
+      ]},
+      { key:'MEDIUM', label:'Negotiating medium', subs:[
+        { key:'FACE_TO_FACE', label:'Face-to-face' },
+        { key:'VIDEO_CONF',  label:'Video-conferencing' },
+        { key:'CHAT_EMAIL',  label:'Chat/Email' }
+      ]}
+    ];
+
+    /* Additional interactive pages */
+    const EXTRA_PAGES = [
+      { key:'DATA_POLICY', label:'Data Usage Policy' },
+      { key:'SCENARIO',     label:'Scenario Setup' },
+      { key:'PLAN',         label:'Negotiation Plan' },
+      { key:'CHAT',         label:'Roleplay Chatbot' },
+      { key:'FEEDBACK',     label:'Performance Feedback' }
+    ];
+
+    const SEQUENCE = [
+      ...CHAPTERS.flatMap(ch => [ch.key, ...ch.subs.map(s => s.key)]),
+      ...EXTRA_PAGES.map(p=>p.key)
+    ];
+
+    const LABEL_MAP = [
+      ...CHAPTERS.flatMap(ch => [
+        {key:ch.key,label:ch.label},
+        ...ch.subs.map(s=>({key:s.key,label:s.label}))
+      ]),
+      ...EXTRA_PAGES
+    ].reduce((acc,{key,label})=>{acc[key]=label;return acc;},{});
+
+    /* ----- 2. SIDEBAR COMPONENT --------------------------------------------- */
+    function Sidebar({ current, completed, onSelect }) {
+      const [expanded, setExpanded] = useState({});
+      useEffect(()=>{
+        /* expose for external toggle if needed */
+      },[]);
+      return (
+        <ul>
+          {CHAPTERS.map(ch=>{
+            /* expand when user toggles it, or when a sub-page is active */
+            const isExpanded = expanded[ch.key] || ch.subs.some(s => s.key === current);
+            return (
+              <li key={ch.key}
+                  className={`chapter ${completed.includes(ch.key)?'completed':''} ${current===ch.key?'active':''}`}>
+                    <div
+                     onClick={e=>{
+                       if (e.target.classList.contains('arrow')) {
+                         /* just expand / collapse */
+                         setExpanded(s => ({ ...s, [ch.key]: !s[ch.key] }));
+                       } else {
+                         /* navigate to the chapter page */
+                         onSelect(ch.key);
+                       }
+                     }}>
+                     <span className="arrow">{isExpanded ? '▼' : '▶'}</span>{ch.label}
+
+
+                  </div>
+                {isExpanded && (
+                  <ul className="sub-list">
+                    {ch.subs.map(s=>(
+                      <li key={s.key}
+                          className={`sub-item ${completed.includes(s.key)?'completed':''} ${current===s.key?'active':''}`}
+                          onClick={()=>onSelect(s.key)}>
+                        {s.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+          {EXTRA_PAGES.map(p=>(
+            <li key={p.key}
+                className={`single-item ${completed.includes(p.key)?'completed':''} ${current===p.key?'active':''}`}
+                onClick={()=>onSelect(p.key)}>
+              {p.label}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    /* ----- 3. DEMO DATA (scenarios) ----------------------------------------- */
+    const demoScenarios = [
+`1) Scenario and business context:
 An audit engagement for a multinational manufacturing company has overrun the expected timeline due to late delivery of financial data and complexities related to overseas subsidiaries.
 
 2) Facts and figures:
@@ -179,483 +275,401 @@ An audit engagement for a multinational manufacturing company has overrun the ex
 - Staffing challenges and illness impacted the audit team's schedule
 
 4) Tone and demeanour of customer:
-The client is frustrated with the overrun but values the audit team's diligence. They are cost-conscious and expect clear justification. The tone should be apologetic but firm.`;
-
-            const defaultScenarioTwo = `1) Scenario and business context:
+The client is frustrated with the overrun but values the audit team's diligence. They are cost-conscious and expect clear justification. The tone should be apologetic but firm.`,
+`1) Scenario and business context:
 An external audit engagement for a midstream oil and gas company operating across North America has significantly exceeded the original scope. The audit was triggered by a corporate restructuring and a series of joint venture (JV) asset swaps, which introduced unexpected layers of complexity in revenue recognition, pipeline ownership, and environmental compliance reporting.
 
 2) Facts and figures:
--Original budget: $600,000
--Actual cost incurred: $815,000
--Overrun: $215,000 (35.8%)
+- Original budget: $600,000
+- Actual cost incurred: $815,000
+- Overrun: $215,000 (35.8%)
 
 3) Reasons for overruns:
--Delays in finalizing JV agreements led to multiple restatements of revenue and asset schedules
--New EPA reporting requirements resulted in additional audit procedures for environmental liabilities
--Several audit findings required extended consultation with external legal and tax advisors
--A cyber incident at a field office caused temporary data access issues, slowing down testing timelines
+- Delays in finalizing JV agreements led to multiple restatements of revenue and asset schedules
+- New EPA reporting requirements resulted in additional audit procedures for environmental liabilities
+- Several audit findings required extended consultation with external legal and tax advisors
+- A cyber incident at a field office caused temporary data access issues, slowing down testing timelines
 
 4) Tone and demeanour of customer:
-The client is pragmatic but under pressure from internal stakeholders to manage costs tightly. While they acknowledge the audit complexities were partly due to their own delays and internal changes, they are pushing back on cost escalations. The tone should be measured, collaborative, and solution-oriented, emphasizing transparency and shared accountability.`;
-
-            const defaultScenarioThree = `1) Scenario and business context:
+The client is pragmatic but under pressure from internal stakeholders to manage costs tightly. While they acknowledge the audit complexities were partly due to their own delays and internal changes, they are pushing back on cost escalations. The tone should be measured, collaborative, and solution-oriented, emphasizing transparency and shared accountability.`,
+`1) Scenario and business context:
 An audit engagement for a publicly listed SaaS company has exceeded its original scope following a year of rapid international expansion and a late-stage acquisition of an AI startup. The audit became more complex due to revenue recognition challenges under ASC 606, data integrity issues in the company’s internal reporting systems, and high employee turnover in finance.
 
 2) Facts and figures:
--Original budget: $450,000
--Actual cost incurred: $635,000
--Overrun: $185,000 (41%)
+- Original budget: $450,000
+- Actual cost incurred: $635,000
+- Overrun: $185,000 (41%)
 
 3) Reasons for overruns:
--Multiple bundled contracts with vague performance obligations required deep technical reviews
--Integration of the acquired startup was incomplete, leading to inconsistent financial records and manual reconciliations
--Cloud-based financial systems experienced versioning issues, requiring time-consuming data validation and re-performance of tests
--Late adjustments to stock-based compensation accounting added additional rounds of audit review
+- Multiple bundled contracts with vague performance obligations required deep technical reviews
+- Integration of the acquired startup was incomplete, leading to inconsistent financial records and manual reconciliations
+- Cloud-based financial systems experienced versioning issues, requiring time-consuming data validation and re-performance of tests
+- Late adjustments to stock-based compensation accounting added additional rounds of audit review
 
 4) Tone and demeanour of customer:
-The client is detail-oriented and operates in a fast-paced, high-stakes environment. They are frustrated by the cost increase, especially given internal perceptions of tech-enabled efficiency. However, they value precision and are likely to respond to data-backed reasoning. The tone should be professional, assertive, and focused on explaining the necessity and value of the additional work.`;
+The client is detail-oriented and operates in a fast-paced, high-stakes environment. They are frustrated by the cost increase, especially given internal perceptions of tech-enabled efficiency. However, they value precision and are likely to respond to data-backed reasoning. The tone should be professional, assertive, and focused on explaining the necessity and value of the additional work.`
+    ];
 
-
-    function ScenarioEditor({ scenario, setScenario, onGenerate, goNext  }) {
+    /* ----- 4. SCENARIO EDITOR COMPONENT ------------------------------------ */
+    function ScenarioEditor({ scenario, setScenario, onGenerate, goNext }) {
       return (
-          <div className="page-content" style={{ display: 'flex', flexDirection: 'column' }}>
-            <h2>Scenario Setup</h2>
-            <textarea
-              className="editable-html"
-              value={scenario}
-              onChange={e => setScenario(e.target.value)}
-              style={{ flex: 1, marginBottom: '20px' }}
-            />
-            <div className="demo-scenarios" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <h3>Demo Scenarios</h3>
-            {[defaultScenarioOne, defaultScenarioTwo, defaultScenarioThree].map((sc, i) => (
-                <div key={i} className="scenario" onClick={() => setScenario(sc)}>
-                  <img
-                    src={`/Static/Scenario_${i+1}.png`}
-                    alt={`Scenario ${i+1}`}
-                  />
-                  <p>Scenario {i+1}</p>
-                </div>
-              ))}
-
+        <div className="page-content">
+          <h2>Scenario Setup</h2>
+          <textarea className="editable-html" value={scenario}
+                    onChange={e=>setScenario(e.target.value)} />
+          <h3 style={{marginTop:'20px'}}>Demo Scenarios</h3>
+          <div className="demo-scenarios" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+            {demoScenarios.map((sc,i)=>(
+              <div key={i} className="single-item"
+                   style={{textAlign:'center',width:'30%'}}
+                   onClick={()=>setScenario(sc)}>
+                <img src={`/Static/Scenario_${i+1}.png`}
+                     alt={` Scenario ${i+1}`} style={{width:'40%',borderRadius:4}}/>
+                <p>Scenario {i+1}</p>
+              </div>
+            ))}
           </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                onGenerate();
-                goNext(PAGES.PLAN);
-              }}
-            >
-              Generate Negotiation Plan
-            </button>
-
+          <button className="btn btn-primary"
+                  onClick={()=>{onGenerate();goNext('PLAN');}}>
+            Generate Negotiation Plan
+          </button>
         </div>
       );
     }
 
-    function NegotiationPlan({ plan, setPlan, goNext  }) {
-   const [isEditing, setIsEditing] = useState(false);
-   return (
-     <div className="page-content">
-       <h3>Negotiation Plan</h3>
+    /* ----- 5. NEGOTIATION PLAN COMPONENT ------------------------------------ */
+    function NegotiationPlan({ plan, setPlan, goNext }) {
+      const [isEditing,setIsEditing]=useState(false);
+      return (
+        <div className="page-content">
+          <h2>Negotiation Plan</h2>
+          {isEditing
+            ? <textarea className="editable-html" value={plan} onChange={e=>setPlan(e.target.value)}/>
+            : <div className="editable-html preview" dangerouslySetInnerHTML={{__html:marked.parse(plan)}}/>}
+          <div style={{marginTop:'10px',display:'flex',gap:'10px'}}>
+            <button className="btn btn-secondary" onClick={()=>setIsEditing(!isEditing)}>
+              {isEditing?'Preview':'Edit'}
+            </button>
+            <button className="btn btn-primary" onClick={()=>goNext('CHAT')}>
+              Next: Roleplay Chatbot
+            </button>
+          </div>
+        </div>
+      );
+    }
 
-       {isEditing ? (
-         <textarea className="editable-html" value={plan} onChange={e=>setPlan(e.target.value)} />
-       ) : (
-         <div className="editable-html preview" dangerouslySetInnerHTML={{ __html: marked.parse(plan)}}/>
-       )}
-      <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-        <button className="btn btn-secondary" onClick={()=>setIsEditing(!isEditing)}>
-          {isEditing ? 'Preview' : 'Edit'}
-        </button>
-        <button className="btn btn-primary" onClick={() => goNext(PAGES.CHAT)}>
-          Next: Roleplay Chatbot
-        </button>
-      </div>
+    /* ----- 6. CHATBOT COMPONENT (identical logic) --------------------------- */
+    function ChatbotUI({ conversation, setConversation, goNext, onSession }) {
+      const [sessionID,setSessionID]=useState(null);
+      const [isRecording,setIsRecording]=useState(false);
 
-     </div>
-   );
- }
+      const ws=useRef(),audioCtx=useRef(),scriptRef=useRef(),gainRef=useRef(),
+            playback=useRef(0),scheduled=useRef([]),endRef=useRef(null),
+            srcRef=useRef();
+      const SAMPLE_RATE=24000;
+      useEffect(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),[conversation]);
 
-    function ChatbotUI({ goNext, onSession }) {
-      const [sessionID, setSessionID] = useState(null);
-      const [isRecording, setIsRecording] = useState(false);
-      const [conversation, setConversation] = useState([]);
-      const ws = useRef(), audioCtx = useRef(), scriptRef = useRef(), gainRef = useRef(), playback = useRef(0), scheduled = useRef([]), endRef = useRef(null);
-      const mediaRef = useRef();
-      const srcRef = useRef();
-      const SAMPLE_RATE = 24000;
-      useEffect(()=> endRef.current?.scrollIntoView({behavior:'smooth'}), [conversation]);
-
-
-
-      useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[conversation]);
-
-      const logDebug=msg=>{
-        const dbg=document.getElementById('debug');
-        if(dbg){ const p=document.createElement('p'); p.textContent=`[${new Date().toLocaleTimeString()}] ${msg}`; dbg.appendChild(p);} };
-
-      // Audio helpers
+      /* --- audio helpers (unchanged) --- */
       function createWav(buffer,rate,channels=1){
-        const pcm=new Uint8Array(buffer); const header=new ArrayBuffer(44); const view=new DataView(header);
-        function wstr(v,o,s){ for(let i=0;i<s.length;i++) view.setUint8(o+i,s.charCodeAt(i)); }
-        wstr(view,0,'RIFF'); view.setUint32(4,36+pcm.length,true);
-        wstr(view,8,'WAVE'); wstr(view,12,'fmt '); view.setUint32(16,16,true);
-        view.setUint16(20,1,true); view.setUint16(22,channels,true); view.setUint32(24,rate,true);
-        view.setUint32(28,rate*channels*2,true); view.setUint16(32,channels*2,true);
-        view.setUint16(34,16,true); wstr(view,36,'data'); view.setUint32(40,pcm.length,true);
-        const buf=new Uint8Array(header.byteLength+pcm.length); buf.set(new Uint8Array(header),0); buf.set(pcm,header.byteLength);
+        const pcm=new Uint8Array(buffer);
+        const header=new ArrayBuffer(44);const v=new DataView(header);
+        const wr=(s,o)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+        wr('RIFF',0);v.setUint32(4,36+pcm.length,true);
+        wr('WAVE',8);wr('fmt ',12);v.setUint32(16,16,true);
+        v.setUint16(20,1,true);v.setUint16(22,channels,true);v.setUint32(24,rate,true);
+        v.setUint32(28,rate*channels*2,true);v.setUint16(32,channels*2,true);
+        v.setUint16(34,16,true);wr('data',36);v.setUint32(40,pcm.length,true);
+        const buf=new Uint8Array(header.byteLength+pcm.length);
+        buf.set(new Uint8Array(header),0);buf.set(pcm,header.byteLength);
         return buf.buffer;
       }
-      function b64ToBuf(b64){ const bin=atob(b64), len=bin.length, u=new Uint8Array(len); for(let i=0;i<len;i++)u[i]=bin.charCodeAt(i); return u.buffer; }
-      function downsample(input, inRate, outRate){ if(outRate===inRate) return input; const ratio=inRate/outRate; const newLen=Math.round(input.length/ratio); const out=new Float32Array(newLen);
-        let resI=0, bufI=0; while(resI<newLen){ const next=Math.round((resI+1)*ratio); let sum=0,count=0; for(let i=bufI;i<next&&i<input.length;i++){ sum+=input[i]; count++; }
-          out[resI]=count?sum/count:0; resI++; bufI=next; }
-        return out;
-      }
-      function floatTo16(input){ const out=new Int16Array(input.length); input.forEach((v,i)=>out[i]=v<0?v*0x8000:v*0x7FFF); return out; }
+      const b64ToBuf=b64=>{const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer;};
+      const downsample=(input,inRate,outRate)=>{
+        if(inRate===outRate)return input;
+        const ratio=inRate/outRate,newLen=Math.round(input.length/ratio);
+        const out=new Float32Array(newLen);let resI=0,bufI=0;
+        while(resI<newLen){
+          const next=Math.round((resI+1)*ratio);let sum=0,count=0;
+          for(let i=bufI;i<next&&i<input.length;i++){sum+=input[i];count++;}
+          out[resI]=count?sum/count:0;resI++;bufI=next;
+        }return out;
+      };
+      const floatTo16=input=>{
+        const out=new Int16Array(input.length);
+        input.forEach((v,i)=>out[i]=v<0?v*0x8000:v*0x7FFF);return out;
+      };
 
-      // Message handlers
-      const updateServer=(id,delta)=>{/* identical to index.html */
-        if(!delta.trim())return; setConversation(prev=>{ const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
-          if(idx>=0){ if(prev[idx].finalized) return prev; const upd={...prev[idx],text:prev[idx].text+delta}; const copy=[...prev]; copy[idx]=upd; return copy;}
-          return [...prev,{item_id:id,role:'server',text:delta,finalized:false,timestamp:Date.now()}]; }); };
-      const finalizeServer=(id,trans,ts)=>{ setConversation(prev=>{ const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
-          if(idx>=0){ const txt=trans.trim()||prev[idx].text; const upd={...prev[idx],text:txt,finalized:true,timestamp:ts}; const copy=[...prev]; copy[idx]=upd; return copy;}
-          if(trans.trim()) return [...prev,{item_id:id,role:'server',text:trans,finalized:true,timestamp:ts}]; return prev; }); };
-      const updateUser=(id,trans,ts)=>{ if(!trans.trim())return; setConversation(prev=>{ const last=prev[prev.length-1]; if(last&&last.role==='user'){ const merged={...last,text:(last.text.trim()+' '+trans.trim()).trim(),timestamp:ts}; return [...prev.slice(0,-1),merged]; } return [...prev,{item_id:id,role:'user',text:trans,finalized:true,timestamp:ts}]; }); };
-      const addUser=(txt,ts=Date.now())=>{ if(!txt.trim())return; setConversation(prev=>[...prev,{role:'user',text:txt,finalized:true,timestamp:ts}]); };
-      const playChunk=b64=>{ const buf=b64ToBuf(b64); const wav=createWav(buf,SAMPLE_RATE); audioCtx.current.decodeAudioData(wav,decoded=>{
-          const now=audioCtx.current.currentTime; if(playback.current<now) playback.current=now;
-          const src=audioCtx.current.createBufferSource(); src.buffer=decoded; src.connect(audioCtx.current.destination);
-          src.start(playback.current); scheduled.current.push(src); playback.current+=decoded.duration;
-        },e=>logDebug('Decode error '+e)); };
-
-      async function startConversation() {
-          try {
-            if (!audioCtx.current) {
-              audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            console.log('🚀 startConversation(): opening WS');
-            ws.current = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') +
-                                          '://' +
-                                          window.location.host +
-                                          '/conversation'
-                                        );
-            //ws.current.onopen = () => logDebug('WebSocket opened.');
-
-            ws.current.onmessage = (evt) => {
-              console.log('📨 raw WS message:', evt.data);
-              const r = JSON.parse(evt.data);
-              if (r.type === 'session_id') {
-                setSessionID(r.session_id);
-                onSession(r.session_id);
-                return;
-              }
-              switch (r.type) {
-                case 'response.audio_transcript.delta':
-                  updateServer(r.item_id, r.delta);
-                  break;
-                case 'response.audio_transcript.done':
-                  finalizeServer(r.item_id, r.transcript, r.timestamp);
-                  break;
-                case 'conversation.item.input_audio_transcription.completed':
-                  r.item_id
-                    ? updateUser(r.item_id, r.transcript, r.timestamp)
-                    : addUser(r.transcript, r.timestamp);
-                  break;
-                case 'response.audio.delta':
-                  playChunk(r.delta);
-                  break;
-                case 'response.audio.done':
-                    finalizeServer(r.item_id, '', r.timestamp);
-                    break;
-                case 'response.done':
-                    // No action needed for this response type
-                    break;
-                case 'input_audio_buffer.speech_started':
-                  scheduled.current.forEach((s) => {
-                    try {
-                      s.stop();
-                    } catch {}
-                  });
-                  scheduled.current = [];
-                  playback.current = audioCtx.current.currentTime;
-                  break;
-                case 'input_audio_buffer.speech_stopped':
-                  //logDebug('Speech stopped. Finalizing user transcription...');
-                  setConversation((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.role === 'user' && !last.finalized) {
-                      const finalized = { ...last, finalized: true };
-                      return [...prev.slice(0, -1), finalized];
-                    }
-                    return prev;
-                  });
-                  break;
-                default:
-                  logDebug(`Unhandled message type: ${r.type}`);
-              }
-            };
-
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-            const srcNode = audioCtx.current.createMediaStreamSource(stream);
-            srcRef.current = srcNode;
-            scriptRef.current = audioCtx.current.createScriptProcessor(4096, 1, 1);
-            gainRef.current = audioCtx.current.createGain();
-            gainRef.current.gain.value = 0;
-
-            scriptRef.current.onaudioprocess = (e) => {
-              const inData = e.inputBuffer.getChannelData(0);
-              const down = downsample(inData, audioCtx.current.sampleRate, SAMPLE_RATE);
-              const pcm = floatTo16(down);
-              const b64 = window.btoa(String.fromCharCode(...new Uint8Array(pcm.buffer)));
-              if (ws.current.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify({ audio_data: b64 }));
-              }
-            };
-
-            srcNode.connect(scriptRef.current);
-            scriptRef.current.connect(gainRef.current);
-            gainRef.current.connect(audioCtx.current.destination);
-
-            setIsRecording(true);
-            //logDebug('Conversation started.');
-          } catch (e) {
-            logDebug('Error starting: ' + e);
+      /* --- conversation helpers --- */
+      const updateServer=(id,delta)=>{if(!delta.trim())return;
+        setConversation(prev=>{
+          const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
+          if(idx>=0){
+            if(prev[idx].finalized)return prev;
+            const upd={...prev[idx],text:prev[idx].text+delta};
+            const copy=[...prev];copy[idx]=upd;return copy;
           }
+          return [...prev,{item_id:id,role:'server',text:delta,finalized:false,timestamp:Date.now()}];
+        });
+      };
+      const finalizeServer=(id,trans,ts)=>{setConversation(prev=>{
+        const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
+        if(idx>=0){
+          const txt=trans.trim()||prev[idx].text;
+          const upd={...prev[idx],text:txt,finalized:true,timestamp:ts};
+          const copy=[...prev];copy[idx]=upd;return copy;
         }
+        return trans.trim()?[...prev,{item_id:id,role:'server',text:trans,finalized:true,timestamp:ts}]:prev;
+      });};
+      const updateUser=(id,trans,ts)=>{if(!trans.trim())return;
+        setConversation(prev=>{
+          const last=prev[prev.length-1];
+          if(last&&last.role==='user'){
+            const merged={...last,text:(last.text.trim()+' '+trans.trim()).trim(),timestamp:ts};
+            return [...prev.slice(0,-1),merged];
+          }
+          return [...prev,{item_id:id,role:'user',text:trans,finalized:true,timestamp:ts}];
+        });
+      };
+      const addUser=(txt,ts=Date.now())=>{
+        if(!txt.trim())return;
+        setConversation(prev=>[...prev,{role:'user',text:txt,finalized:true,timestamp:ts}]);
+      };
+      const playChunk=b64=>{
+        const buf=b64ToBuf(b64);
+        const wav=createWav(buf,SAMPLE_RATE);
+        audioCtx.current.decodeAudioData(wav,decoded=>{
+          const now=audioCtx.current.currentTime;
+          if(playback.current<now)playback.current=now;
+          const src=audioCtx.current.createBufferSource();
+          src.buffer=decoded;src.connect(audioCtx.current.destination);
+          src.start(playback.current);scheduled.current.push(src);
+          playback.current+=decoded.duration;
+        });
+      };
 
-      function stopConversation(){ scriptRef.current?.disconnect(); srcRef.current?.disconnect(); gainRef.current?.disconnect(); ws.current?.close(); setIsRecording(false); /* logDebug('Conversation stopped.'); */ }
-
+      /* --- start/stop conversation --- */
+      async function startConversation(){
+        if(!audioCtx.current)audioCtx.current=new (window.AudioContext||window.webkitAudioContext)();
+        ws.current=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/conversation');
+        ws.current.onmessage=evt=>{
+          const r=JSON.parse(evt.data);
+          if(r.type==='session_id'){setSessionID(r.session_id);onSession(r.session_id);return;}
+          switch(r.type){
+            case 'response.audio_transcript.delta': updateServer(r.item_id,r.delta);break;
+            case 'response.audio_transcript.done': finalizeServer(r.item_id,r.transcript,r.timestamp);break;
+            case 'conversation.item.input_audio_transcription.completed': r.item_id?updateUser(r.item_id,r.transcript,r.timestamp):addUser(r.transcript,r.timestamp);break;
+            case 'response.audio.delta': playChunk(r.delta);break;
+            case 'response.audio.done': finalizeServer(r.item_id,'',r.timestamp);break;
+            case 'input_audio_buffer.speech_started':
+              scheduled.current.forEach(s=>{try{s.stop();}catch{}});
+              scheduled.current=[];playback.current=audioCtx.current.currentTime;break;
+            case 'input_audio_buffer.speech_stopped':
+              setConversation(prev=>{
+                const last=prev[prev.length-1];
+                if(last&&last.role==='user'&&!last.finalized){
+                  const finalized={...last,finalized:true};
+                  return [...prev.slice(0,-1),finalized];
+                }return prev;
+              });break;
+            default:/*noop*/}
+        };
+        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        const srcNode=audioCtx.current.createMediaStreamSource(stream);
+        srcRef.current=srcNode;
+        scriptRef.current=audioCtx.current.createScriptProcessor(4096,1,1);
+        gainRef.current=audioCtx.current.createGain();gainRef.current.gain.value=0;
+        scriptRef.current.onaudioprocess=e=>{
+          const inData=e.inputBuffer.getChannelData(0);
+          const down=downsample(inData,audioCtx.current.sampleRate,SAMPLE_RATE);
+          const pcm=floatTo16(down);
+          const b64=btoa(String.fromCharCode(...new Uint8Array(pcm.buffer)));
+          if(ws.current.readyState===WebSocket.OPEN){
+            ws.current.send(JSON.stringify({audio_data:b64}));
+          }
+        };
+        srcNode.connect(scriptRef.current);
+        scriptRef.current.connect(gainRef.current);
+        gainRef.current.connect(audioCtx.current.destination);
+        setIsRecording(true);
+      }
+      function stopConversation(){
+        scriptRef.current?.disconnect();srcRef.current?.disconnect();gainRef.current?.disconnect();
+        ws.current?.close();setIsRecording(false);
+      }
 
       return (
-    <div className="page-content" style={{ position:'relative' }}>
-      <h2>Role play chat</h2>
-      <div style={{ textAlign:'center' }}>
-        {isRecording ? (
-          <button
-            className="btn btn-danger"
-            onClick={stopConversation}    // ← actually call it
-          >
-            Stop Conversation
-          </button>
-        ) : (
-          <button
-            className="btn btn-secondary"
-            onClick={startConversation}   // ← actually call it
-          >
-            Start Conversation
-          </button>
-        )}
-      </div>
-      {conversation
-        .sort((a, b) => a.timestamp - b.timestamp)
-        .map((m, i) => (
-          <div key={i} className={`message ${m.role}`}>
-            <strong>{m.role === 'user' ? 'User:' : 'Server:'}</strong>
-            <p>{m.text}</p>
-            <small>{new Date(m.timestamp).toLocaleTimeString()}</small>
+        <div className="page-content" style={{position:'relative'}}>
+          <h2>Role-play Chatbot</h2>
+          <div style={{textAlign:'center'}}>
+            {isRecording
+              ? <button className="btn btn-danger" onClick={stopConversation}>Stop Conversation</button>
+              : <button className="btn btn-secondary" onClick={startConversation}>Start Conversation</button>}
           </div>
-        ))}
-      <div ref={endRef}></div>
-      <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <button className="btn btn-secondary" onClick={() => stopConversation()}>
-              Stop Conversation
-            </button>
-            <button
-              className="btn btn-primary"
-              style={{ marginLeft: '10px' }}
-              onClick={() => {
-                console.log('🛑 Ending roleplay, going to FEEDBACK');
-                stopConversation();
-                goNext(PAGES.FEEDBACK);
-              }}
-            >
-              End roleplay and get feedback
+          {conversation.sort((a,b)=>a.timestamp-b.timestamp).map((m,i)=>(
+            <div key={i} className={`message ${m.role}`}>
+              <strong>{m.role==='user'?'User:':'Server:'}</strong>
+              <p>{m.text}</p>
+              <small>{new Date(m.timestamp).toLocaleTimeString()}</small>
+            </div>
+          ))}
+          <div ref={endRef}></div>
+          <div style={{textAlign:'center',marginTop:'20px'}}>
+            <button className="btn btn-secondary" onClick={stopConversation}>Stop Conversation</button>
+            <button className="btn btn-primary" style={{marginLeft:'10px'}}
+                    onClick={()=>{stopConversation();goNext('FEEDBACK');}}>
+              End roleplay & get feedback
             </button>
           </div>
-    </div>
-  );
-}
+        </div>
+      );
+    }
 
+    /* ----- 7. FEEDBACK COMPONENT ------------------------------------------- */
     function FeedbackPage({ goNext, sessionID }) {
-      const areas = [
-        'Anchoring',
-        'Priority Disclosure Timing',
-        'Integrative Bargaining',
-        'Trust and Reciprocity',
-        'Perspective Taking',
-        'Team Negotiation'
-      ];
-      const [scores, setScores] = useState({});
-      const [feedback, setFeedback] = useState({});
-      const [loading, setLoading] = useState(true);
-
-      useEffect(() => {
-  if (!sessionID) return;
-
-  console.log('🛰️  FeedbackPage: about to fetch with sessionID =', sessionID);
-  setLoading(true);
-
-  fetch('/api/feedback', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionID })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error(res.statusText);
-      console.log('🛰️  FeedbackPage: feedback endpoint responded with status', res.status);
-      return res.json();
-    })
-    .then(data => {
-      console.log('🛰️  FeedbackPage: received data', data);
-      setScores(data.scores);
-      setFeedback(data.feedback);
-    })
-    .catch(err => {
-      console.error('🛰️  FeedbackPage: fetch error', err);
-    })
-    .finally(() => {
-      setLoading(false);
-    });  // ← semicolon here terminates the entire chained expression
-}, [sessionID]);
-
-      if (loading) {
-        return <div className="page-content"><h2>Loading feedback...</h2></div>;
-      }
-
+      const areas=['Anchoring','Priority Disclosure Timing','Integrative Bargaining','Trust and Reciprocity','Perspective Taking','Team Negotiation'];
+      const [scores,setScores]=useState({});const [feedback,setFeedback]=useState({});const [loading,setLoading]=useState(true);
+      useEffect(()=>{
+        if(!sessionID)return;
+        setLoading(true);
+        fetch('/api/feedback',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({session_id:sessionID})
+        })
+        .then(res=>{if(!res.ok)throw new Error(res.statusText);return res.json();})
+        .then(data=>{setScores(data.scores);setFeedback(data.feedback);})
+        .catch(console.error)
+        .finally(()=>setLoading(false));
+      },[sessionID]);
+      if(loading)return <div className="page-content"><h2>Loading feedback…</h2></div>;
       return (
         <div className="page-content">
           <h2>Performance Feedback</h2>
-          {areas.map(area => (
-            <div key={area} style={{ marginBottom: '20px' }}>
-              <h4>{area}</h4>
-              <p><strong>Score:</strong> {scores[area] || 'N/A'}</p>
-              <p>{feedback[area] || 'No feedback available.'}</p>
+          {areas.map(a=>(
+            <div key={a} style={{marginBottom:'20px'}}>
+              <h4>{a}</h4>
+              <p><strong>Score:</strong> {scores[a]??'N/A'}</p>
+              <p>{feedback[a]??'No feedback available.'}</p>
             </div>
           ))}
-          <button className="btn btn-primary" onClick={() => goNext(PAGES.DATA_POLICY)}>
-            Restart Course
-          </button>
+          <button className="btn btn-primary" onClick={()=>goNext('DATA_POLICY')}>Restart Course</button>
         </div>
       );
     }
 
-    function App() {
-      const [page, setPage] = useState(PAGES.DATA_POLICY);
-      const [completedPages, setCompletedPages] = useState([]);
-      const [scenario, setScenario] = useState(defaultScenarioOne);
-      const [plan, setPlan] = useState('# Negotiation Plan\n\n');
-      const [sessionID, setSessionID]           = useState(null);
-
-      const generatePlan = async () => {
-            setPage(PAGES.PLAN);
-            setPlan('');
-            const resp = await fetch('/api/generate_plan', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'text/event-stream'
-              },
-              body: JSON.stringify({ scenario })
-            });
-            if (!resp.ok) throw new Error(resp.statusText);
-
-            const reader  = resp.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        // Decode this chunk and append to buffer
-        buffer += decoder.decode(value, { stream: true });
-
-        // Split on newlines, keep the last partial line in buffer
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-
-        // Process only the complete lines
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const { chunk } = JSON.parse(line.slice(6));
-          setPlan(prev => prev + chunk);
-        }
-      }
-     };
-
-      function goNext(nextPage) {
-          // mark *current* page as completed
-          setCompletedPages(prev =>
-            prev.includes(page) ? prev : [...prev, page]
-          );
-          // then navigate
-          setPage(nextPage);
-        }
-
-      // Hook sidebar clicks → React state
-      useEffect(() => {
-        Object.values(PAGES).forEach(key => {
-          const li = document.getElementById(key);
-          if (!li) return;
-          li.onclick = () => setPage(key);
-          const isDone = key === page || completedPages.includes(key);
-          li.classList.toggle('completed', isDone);
-        });
-      }, [page, completedPages]);
-
-      function DataPolicy() {
-        return (
-          <div className="page-content">
-            <h2>Data Usage Policy</h2>
-            <p>
-              [Your policy text here…]
-            </p>
-            <button
-              className="btn btn-primary"
-              onClick={() => goNext(PAGES.SCENARIO)}
-            >
-              Next: Scenario Setup
-            </button>
-          </div>
-        );
-      }
-
-
-
+    /* ----- 8. GENERIC PLACEHOLDER PAGE ------------------------------------- */
+    function PlaceholderPage({ label, showNext, onNext }) {
       return (
-        <>
-          {page === PAGES.DATA_POLICY && <DataPolicy goNext={() => goNext(PAGES.SCENARIO)} />}
-          {page === PAGES.SCENARIO    && (
-            <ScenarioEditor
-              scenario={scenario}
-              setScenario={setScenario}
-              onGenerate={generatePlan}
-              goNext={goNext}
-            />
-          )}
-          {page === PAGES.PLAN        && <NegotiationPlan plan={plan} setPlan={setPlan} goNext={goNext} />}
-          {page === PAGES.CHAT && (
-            <ChatbotUI
-              goNext={goNext}
-              onSession={(id) => setSessionID(id)}
-            />
-          )}
-          {page === PAGES.FEEDBACK && (
-            <FeedbackPage
-              goNext={goNext}
-              sessionID={sessionID}
-            />
-          )}
-        </>
+        <div className="page-content">
+          <h2>{label}</h2>
+          <p>Content for {label}…</p>
+          {showNext && (
+            <button className="btn btn-secondary"
+                    onClick={onNext}>
+              Mark as complete & Next
+            </button>
+         )}
+        </div>
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('app-container')).render(<App />);
+    /* ----- 9. DATA POLICY PAGE -------------------------------------------- */
+    /* ----- DataPolicy component removed – content now comes from markdown */
+
+    /* ----- 10. MAIN APP ----------------------------------------------------- */
+    function App() {
+      const [page,setPage]=useState(SEQUENCE[0]);
+      const [completed,setCompleted]=useState([]);
+      const [scenario,setScenario]=useState(demoScenarios[0]);
+      const [plan,setPlan]=useState('# Negotiation Plan\\n\\n');
+      const [sessionID,setSessionID]=useState(null);
+      const [conversation,setConversation]=useState([]);
+
+      const generatePlan=async()=>{
+        setPage('PLAN');setPlan('');
+        const resp=await fetch('/api/generate_plan',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Accept':'text/event-stream'},
+          body:JSON.stringify({scenario})
+        });
+        if(!resp.ok)throw new Error(resp.statusText);
+        const reader=resp.body.getReader();
+        const decoder=new TextDecoder('utf-8');let buffer='';
+        while(true){
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+
+          const events = buffer.split('\n\n');
+          buffer = events.pop();            // last incomplete piece is kept
+
+          for (const evt of events) {
+            const line = evt.trim();
+            if (!line.startsWith('data:')) continue;
+
+
+            const json = line.slice(5).trim().replace(/^\s/, '');
+            const { chunk } = JSON.parse(json);
+            setPlan(prev => prev + chunk);  // append streamed chunk
+          }
+        }
+
+      };
+
+      const goNext=next=>{
+        setCompleted(prev=>prev.includes(page)?prev:[...prev,page]);
+        setPage(next);
+      };
+
+      /* Refresh sidebar completed classes */
+      useEffect(()=>{
+        const root=document.getElementById('sidebar-list');
+        ReactDOM.createRoot(root).render(
+          <Sidebar current={page} completed={completed} onSelect={setPage}/>
+        );
+      },[page,completed]);
+
+      /* RENDER PAGE */
+      if(EXTRA_PAGES.some(p=>p.key===page)){
+        switch(page){
+          case 'DATA_POLICY': return (
+            <ContentPage
+              pageKey='DATA_POLICY'          /* loads /Static/content/DATA_POLICY.md */
+              showNext={true}
+              onNext={()=>goNext('SCENARIO')}/* keep the original flow          */
+            />
+          );
+          case 'SCENARIO':    return <ScenarioEditor scenario={scenario} setScenario={setScenario}
+                                                     onGenerate={generatePlan} goNext={goNext}/>;
+          case 'PLAN':        return <NegotiationPlan plan={plan} setPlan={setPlan} goNext={goNext}/>;
+          case 'CHAT':        return <ChatbotUI
+                                     conversation={conversation}
+                                     setConversation={setConversation}
+                                     goNext={goNext}
+                                     onSession={setSessionID}/>;
+          case 'FEEDBACK':    return <FeedbackPage goNext={goNext} sessionID={sessionID}/>;
+          default:            return <PlaceholderPage label={LABEL_MAP[page]||page}/>;
+        }
+      }
+      /* default chapter/sub-page */
+      const idx      = SEQUENCE.indexOf(page);
+      const hasNext  = idx > -1 && idx < SEQUENCE.length - 1;
+      const nextKey  = hasNext ? SEQUENCE[idx + 1] : null;
+
+      return (
+        <ContentPage
+          pageKey={page}
+          showNext={hasNext}
+          onNext={() => goNext(nextKey)}
+        />
+      );
+     }
+
+    ReactDOM.createRoot(document.getElementById('app-root')).render(<App />);
+    /* plain JS toggle for mobile drawer */
+    document.getElementById('hamburger').onclick = () =>
+    document.querySelector('.sidebar').classList.toggle('open');
   </script>
 </body>
 </html>

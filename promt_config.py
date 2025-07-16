@@ -17,7 +17,7 @@ DEFAULT_SCENARIO = (
 ROLE_PLAY_PROMPT = (
     "Given the following scenario, define the role-play behavior for the negotiation opponent. "
     "Your response should be a prompt for a GPT 4o LLM to make it behave as the CFO in the given scenario. "
-    "Ensure that the CFO is difficult to negotiate with and the CFO needs deep justification before willing "
+    "Ensure that the CFO is difficult to negotiate with and the CFO needs some justification before willing "
     "to accept higher fees. Give the CFO a posh British accent."
 )
 

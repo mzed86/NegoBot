@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Negotiation Assistant</title>
+  <!-- Google Font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" />
+  <!-- React, ReactDOM, Babel, Marked.js -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #fecb00;    /* EY yellow */
+      --secondary-color: #333333;  /* EY dark gray */
+      --bg-color: #f5f5f5;         /* Light gray background */
+      --card-bg: #ffffff;          /* White card background */
+      --font-family: 'Roboto', Arial, sans-serif;
+      --border-radius: 12px;
+      --transition-time: 0.3s;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--secondary-color);
+      display: flex; flex-direction: column; min-height: 100vh;
+    }
+    .container { display: flex; flex: 1; }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      width: 300px; background-color: var(--primary-color);
+      color: var(--secondary-color);
+      padding: 20px; display: flex; flex-direction: column; gap: 20px;
+      border-radius: var(--border-radius);
+      position: relative;
+    }
+    .logo {
+        position: static;        /* kill any “absolute” you may have left */
+        align-self: center;      /* center it horizontally */
+        max-width: 80%;          /* optional—so it never gets too huge */
+      }
+    .logo img { max-width: 100px; border-radius: var(--border-radius); }
+    .sidebar h2 { font-size: 1.5rem; margin-bottom: 10px; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar li {
+      padding: 10px; margin-bottom: 8px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background-color var(--transition-time);
+      display: flex; align-items: center;
+    }
+    .sidebar li:hover { background-color: rgba(0,0,0,0.1); }
+    .sidebar li.completed { background-color: rgba(0,0,0,0.2); }
+    .sidebar li.completed::before {
+      content: '✔'; color: green; margin-right: 8px;
+    }
+    .content {
+      flex: 1; padding: 20px;
+      overflow-y: auto; background-color: var(--bg-color);
+    }
+    .page-content {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 20px; margin-bottom: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .editable-html {
+            flex: 1;
+            width:100%;
+            height:100%;
+            min-height:300px;
+            padding:10px;
+            border:1px solid #ccc;
+            border-radius:4px;
+            background:#fff;
+            font-family:inherit;
+            font-size:1rem;
+            resize:vertical;
+            }
+    .preview { min-height:200px; }
+    .nav { display:none; } /* kill any leftover header nav */
+    .btn {
+      font-size:16px; padding:10px 20px; margin:10px 0;
+      border:none; border-radius:var(--border-radius);
+      cursor:pointer; transition:transform var(--transition-time);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background-color:var(--primary-color); color:var(--secondary-color); }
+    .btn-secondary { background-color:#333; color:#fff; }
+    .btn-danger { background-color:#d9534f; color:#fff; }
+    .demo-scenarios { margin-bottom:20px; }
+    .demo-scenarios .scenario { cursor:pointer; text-align:center; margin-bottom:15px; }
+    .demo-scenarios .scenario img {
+      width:25%; border-radius:4px;
+      transition:transform var(--transition-time);
+    }
+    .demo-scenarios .scenario:hover img { transform:scale(1.05); }
+    #conversation { min-height:200px; overflow-y:auto; }
+    .message { padding:10px; margin-bottom:10px; border-radius:4px; }
+    .message.user   { background:#e6f7ff; text-align:right; }
+    .message.server { background:#f0f0f0; text-align:left; }
+    .footer {
+      text-align:center; padding:10px;
+      background: var(--card-bg); border-top:1px solid #ccc;
+      font-size:0.9rem;
+    }
+    .footer a { margin:0 10px; color:var(--secondary-color); text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+  </style>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- EY Sidebar -->
+    <div class="sidebar">
+      <div class="logo">
+          <img src="/Static/logo.png" alt="Logo" />
+    </div>
+      <h2>Course Progress</h2>
+      <ul id="progress-list">
+        <li id="DATA_POLICY">Data Usage Policy</li>
+        <li id="SCENARIO">Scenario Setup</li>
+        <li id="PLAN">Negotiation Plan</li>
+        <li id="CHAT">Roleplay Chatbot</li>
+        <li id="FEEDBACK">Performance Feedback</li>
+      </ul>
+    </div>
+
+    <!-- React mounts here -->
+    <div class="content">
+      <div id="app-container"></div>
+    </div>
+  </div>
+
+  <!-- EY Footer -->
+  <div class="footer">
+    <a href="/privacy-policy">Privacy Policy</a>
+    <a href="/contact-us">Contact Us</a>
+    <a href="/report-bug">Report a Bug</a>
+    <a href="/request-feature">Request a Feature</a>
+  </div>
+
+  <!-- React + App Logic -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const PAGES = {
+      DATA_POLICY: 'DATA_POLICY',
+      SCENARIO:     'SCENARIO',
+      PLAN:         'PLAN',
+      CHAT:         'CHAT',
+      FEEDBACK: 'FEEDBACK'
+    };
+    const PAGE_LABELS = {
+      DATA_POLICY:  'Data Usage Policy',
+      SCENARIO:     'Scenario Setup',
+      PLAN:         'Negotiation Plan',
+      CHAT:         'Roleplay Chatbot',
+      FEEDBACK:     'Performance Feedback'
+    };
+    // Sample scenarios:
+    const defaultScenarioOne = `1) Scenario and business context:
+An audit engagement for a multinational manufacturing company has overrun the expected timeline due to late delivery of financial data and complexities related to overseas subsidiaries.
+
+2) Facts and figures:
+- Original budget: $500,000
+- Actual cost incurred: $675,000
+- Overrun: $175,000 (35%)
+
+3) Reasons for overruns:
+- Delays in receiving trial balances from regional teams
+- Unexpected regulatory disclosures required additional audit work
+- Staffing challenges and illness impacted the audit team's schedule
+
+4) Tone and demeanour of customer:
+The client is frustrated with the overrun but values the audit team's diligence. They are cost-conscious and expect clear justification. The tone should be apologetic but firm.`;
+
+            const defaultScenarioTwo = `1) Scenario and business context:
+An external audit engagement for a midstream oil and gas company operating across North America has significantly exceeded the original scope. The audit was triggered by a corporate restructuring and a series of joint venture (JV) asset swaps, which introduced unexpected layers of complexity in revenue recognition, pipeline ownership, and environmental compliance reporting.
+
+2) Facts and figures:
+-Original budget: $600,000
+-Actual cost incurred: $815,000
+-Overrun: $215,000 (35.8%)
+
+3) Reasons for overruns:
+-Delays in finalizing JV agreements led to multiple restatements of revenue and asset schedules
+-New EPA reporting requirements resulted in additional audit procedures for environmental liabilities
+-Several audit findings required extended consultation with external legal and tax advisors
+-A cyber incident at a field office caused temporary data access issues, slowing down testing timelines
+
+4) Tone and demeanour of customer:
+The client is pragmatic but under pressure from internal stakeholders to manage costs tightly. While they acknowledge the audit complexities were partly due to their own delays and internal changes, they are pushing back on cost escalations. The tone should be measured, collaborative, and solution-oriented, emphasizing transparency and shared accountability.`;
+
+            const defaultScenarioThree = `1) Scenario and business context:
+An audit engagement for a publicly listed SaaS company has exceeded its original scope following a year of rapid international expansion and a late-stage acquisition of an AI startup. The audit became more complex due to revenue recognition challenges under ASC 606, data integrity issues in the company’s internal reporting systems, and high employee turnover in finance.
+
+2) Facts and figures:
+-Original budget: $450,000
+-Actual cost incurred: $635,000
+-Overrun: $185,000 (41%)
+
+3) Reasons for overruns:
+-Multiple bundled contracts with vague performance obligations required deep technical reviews
+-Integration of the acquired startup was incomplete, leading to inconsistent financial records and manual reconciliations
+-Cloud-based financial systems experienced versioning issues, requiring time-consuming data validation and re-performance of tests
+-Late adjustments to stock-based compensation accounting added additional rounds of audit review
+
+4) Tone and demeanour of customer:
+The client is detail-oriented and operates in a fast-paced, high-stakes environment. They are frustrated by the cost increase, especially given internal perceptions of tech-enabled efficiency. However, they value precision and are likely to respond to data-backed reasoning. The tone should be professional, assertive, and focused on explaining the necessity and value of the additional work.`;
+
+
+    function ScenarioEditor({ scenario, setScenario, onGenerate, goNext  }) {
+      return (
+          <div className="page-content" style={{ display: 'flex', flexDirection: 'column' }}>
+            <h2>Scenario Setup</h2>
+            <textarea
+              className="editable-html"
+              value={scenario}
+              onChange={e => setScenario(e.target.value)}
+              style={{ flex: 1, marginBottom: '20px' }}
+            />
+            <div className="demo-scenarios" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+            <h3>Demo Scenarios</h3>
+            {[defaultScenarioOne, defaultScenarioTwo, defaultScenarioThree].map((sc, i) => (
+                <div key={i} className="scenario" onClick={() => setScenario(sc)}>
+                  <img
+                    src={`/Static/Scenario_${i+1}.png`}
+                    alt={`Scenario ${i+1}`}
+                  />
+                  <p>Scenario {i+1}</p>
+                </div>
+              ))}
+
+          </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                onGenerate();
+                goNext(PAGES.PLAN);
+              }}
+            >
+              Generate Negotiation Plan
+            </button>
+
+        </div>
+      );
+    }
+
+    function NegotiationPlan({ plan, setPlan, goNext  }) {
+   const [isEditing, setIsEditing] = useState(false);
+   return (
+     <div className="page-content">
+       <h3>Negotiation Plan</h3>
+
+       {isEditing ? (
+         <textarea className="editable-html" value={plan} onChange={e=>setPlan(e.target.value)} />
+       ) : (
+         <div className="editable-html preview" dangerouslySetInnerHTML={{ __html: marked.parse(plan)}}/>
+       )}
+      <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+        <button className="btn btn-secondary" onClick={()=>setIsEditing(!isEditing)}>
+          {isEditing ? 'Preview' : 'Edit'}
+        </button>
+        <button className="btn btn-primary" onClick={() => goNext(PAGES.CHAT)}>
+          Next: Roleplay Chatbot
+        </button>
+      </div>
+
+     </div>
+   );
+ }
+
+    function ChatbotUI({ goNext, onSession }) {
+      const [sessionID, setSessionID] = useState(null);
+      const [isRecording, setIsRecording] = useState(false);
+      const [conversation, setConversation] = useState([]);
+      const ws = useRef(), audioCtx = useRef(), scriptRef = useRef(), gainRef = useRef(), playback = useRef(0), scheduled = useRef([]), endRef = useRef(null);
+      const mediaRef = useRef();
+      const srcRef = useRef();
+      const SAMPLE_RATE = 24000;
+      useEffect(()=> endRef.current?.scrollIntoView({behavior:'smooth'}), [conversation]);
+
+
+
+      useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[conversation]);
+
+      const logDebug=msg=>{
+        const dbg=document.getElementById('debug');
+        if(dbg){ const p=document.createElement('p'); p.textContent=`[${new Date().toLocaleTimeString()}] ${msg}`; dbg.appendChild(p);} };
+
+      // Audio helpers
+      function createWav(buffer,rate,channels=1){
+        const pcm=new Uint8Array(buffer); const header=new ArrayBuffer(44); const view=new DataView(header);
+        function wstr(v,o,s){ for(let i=0;i<s.length;i++) view.setUint8(o+i,s.charCodeAt(i)); }
+        wstr(view,0,'RIFF'); view.setUint32(4,36+pcm.length,true);
+        wstr(view,8,'WAVE'); wstr(view,12,'fmt '); view.setUint32(16,16,true);
+        view.setUint16(20,1,true); view.setUint16(22,channels,true); view.setUint32(24,rate,true);
+        view.setUint32(28,rate*channels*2,true); view.setUint16(32,channels*2,true);
+        view.setUint16(34,16,true); wstr(view,36,'data'); view.setUint32(40,pcm.length,true);
+        const buf=new Uint8Array(header.byteLength+pcm.length); buf.set(new Uint8Array(header),0); buf.set(pcm,header.byteLength);
+        return buf.buffer;
+      }
+      function b64ToBuf(b64){ const bin=atob(b64), len=bin.length, u=new Uint8Array(len); for(let i=0;i<len;i++)u[i]=bin.charCodeAt(i); return u.buffer; }
+      function downsample(input, inRate, outRate){ if(outRate===inRate) return input; const ratio=inRate/outRate; const newLen=Math.round(input.length/ratio); const out=new Float32Array(newLen);
+        let resI=0, bufI=0; while(resI<newLen){ const next=Math.round((resI+1)*ratio); let sum=0,count=0; for(let i=bufI;i<next&&i<input.length;i++){ sum+=input[i]; count++; }
+          out[resI]=count?sum/count:0; resI++; bufI=next; }
+        return out;
+      }
+      function floatTo16(input){ const out=new Int16Array(input.length); input.forEach((v,i)=>out[i]=v<0?v*0x8000:v*0x7FFF); return out; }
+
+      // Message handlers
+      const updateServer=(id,delta)=>{/* identical to index.html */
+        if(!delta.trim())return; setConversation(prev=>{ const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
+          if(idx>=0){ if(prev[idx].finalized) return prev; const upd={...prev[idx],text:prev[idx].text+delta}; const copy=[...prev]; copy[idx]=upd; return copy;}
+          return [...prev,{item_id:id,role:'server',text:delta,finalized:false,timestamp:Date.now()}]; }); };
+      const finalizeServer=(id,trans,ts)=>{ setConversation(prev=>{ const idx=prev.findIndex(m=>m.role==='server'&&m.item_id===id);
+          if(idx>=0){ const txt=trans.trim()||prev[idx].text; const upd={...prev[idx],text:txt,finalized:true,timestamp:ts}; const copy=[...prev]; copy[idx]=upd; return copy;}
+          if(trans.trim()) return [...prev,{item_id:id,role:'server',text:trans,finalized:true,timestamp:ts}]; return prev; }); };
+      const updateUser=(id,trans,ts)=>{ if(!trans.trim())return; setConversation(prev=>{ const last=prev[prev.length-1]; if(last&&last.role==='user'){ const merged={...last,text:(last.text.trim()+' '+trans.trim()).trim(),timestamp:ts}; return [...prev.slice(0,-1),merged]; } return [...prev,{item_id:id,role:'user',text:trans,finalized:true,timestamp:ts}]; }); };
+      const addUser=(txt,ts=Date.now())=>{ if(!txt.trim())return; setConversation(prev=>[...prev,{role:'user',text:txt,finalized:true,timestamp:ts}]); };
+      const playChunk=b64=>{ const buf=b64ToBuf(b64); const wav=createWav(buf,SAMPLE_RATE); audioCtx.current.decodeAudioData(wav,decoded=>{
+          const now=audioCtx.current.currentTime; if(playback.current<now) playback.current=now;
+          const src=audioCtx.current.createBufferSource(); src.buffer=decoded; src.connect(audioCtx.current.destination);
+          src.start(playback.current); scheduled.current.push(src); playback.current+=decoded.duration;
+        },e=>logDebug('Decode error '+e)); };
+
+      async function startConversation() {
+          try {
+            if (!audioCtx.current) {
+              audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            console.log('🚀 startConversation(): opening WS');
+            ws.current = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') +
+                                          '://' +
+                                          window.location.host +
+                                          '/conversation'
+                                        );
+            //ws.current.onopen = () => logDebug('WebSocket opened.');
+
+            ws.current.onmessage = (evt) => {
+              console.log('📨 raw WS message:', evt.data);
+              const r = JSON.parse(evt.data);
+              if (r.type === 'session_id') {
+                setSessionID(r.session_id);
+                onSession(r.session_id);
+                return;
+              }
+              switch (r.type) {
+                case 'response.audio_transcript.delta':
+                  updateServer(r.item_id, r.delta);
+                  break;
+                case 'response.audio_transcript.done':
+                  finalizeServer(r.item_id, r.transcript, r.timestamp);
+                  break;
+                case 'conversation.item.input_audio_transcription.completed':
+                  r.item_id
+                    ? updateUser(r.item_id, r.transcript, r.timestamp)
+                    : addUser(r.transcript, r.timestamp);
+                  break;
+                case 'response.audio.delta':
+                  playChunk(r.delta);
+                  break;
+                case 'response.audio.done':
+                    finalizeServer(r.item_id, '', r.timestamp);
+                    break;
+                case 'response.done':
+                    // No action needed for this response type
+                    break;
+                case 'input_audio_buffer.speech_started':
+                  scheduled.current.forEach((s) => {
+                    try {
+                      s.stop();
+                    } catch {}
+                  });
+                  scheduled.current = [];
+                  playback.current = audioCtx.current.currentTime;
+                  break;
+                case 'input_audio_buffer.speech_stopped':
+                  //logDebug('Speech stopped. Finalizing user transcription...');
+                  setConversation((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.role === 'user' && !last.finalized) {
+                      const finalized = { ...last, finalized: true };
+                      return [...prev.slice(0, -1), finalized];
+                    }
+                    return prev;
+                  });
+                  break;
+                default:
+                  logDebug(`Unhandled message type: ${r.type}`);
+              }
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            const srcNode = audioCtx.current.createMediaStreamSource(stream);
+            srcRef.current = srcNode;
+            scriptRef.current = audioCtx.current.createScriptProcessor(4096, 1, 1);
+            gainRef.current = audioCtx.current.createGain();
+            gainRef.current.gain.value = 0;
+
+            scriptRef.current.onaudioprocess = (e) => {
+              const inData = e.inputBuffer.getChannelData(0);
+              const down = downsample(inData, audioCtx.current.sampleRate, SAMPLE_RATE);
+              const pcm = floatTo16(down);
+              const b64 = window.btoa(String.fromCharCode(...new Uint8Array(pcm.buffer)));
+              if (ws.current.readyState === WebSocket.OPEN) {
+                ws.current.send(JSON.stringify({ audio_data: b64 }));
+              }
+            };
+
+            srcNode.connect(scriptRef.current);
+            scriptRef.current.connect(gainRef.current);
+            gainRef.current.connect(audioCtx.current.destination);
+
+            setIsRecording(true);
+            //logDebug('Conversation started.');
+          } catch (e) {
+            logDebug('Error starting: ' + e);
+          }
+        }
+
+      function stopConversation(){ scriptRef.current?.disconnect(); srcRef.current?.disconnect(); gainRef.current?.disconnect(); ws.current?.close(); setIsRecording(false); /* logDebug('Conversation stopped.'); */ }
+
+
+      return (
+    <div className="page-content" style={{ position:'relative' }}>
+      <h2>Role play chat</h2>
+      <div style={{ textAlign:'center' }}>
+        {isRecording ? (
+          <button
+            className="btn btn-danger"
+            onClick={stopConversation}    // ← actually call it
+          >
+            Stop Conversation
+          </button>
+        ) : (
+          <button
+            className="btn btn-secondary"
+            onClick={startConversation}   // ← actually call it
+          >
+            Start Conversation
+          </button>
+        )}
+      </div>
+      {conversation
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map((m, i) => (
+          <div key={i} className={`message ${m.role}`}>
+            <strong>{m.role === 'user' ? 'User:' : 'Server:'}</strong>
+            <p>{m.text}</p>
+            <small>{new Date(m.timestamp).toLocaleTimeString()}</small>
+          </div>
+        ))}
+      <div ref={endRef}></div>
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <button className="btn btn-secondary" onClick={() => stopConversation()}>
+              Stop Conversation
+            </button>
+            <button
+              className="btn btn-primary"
+              style={{ marginLeft: '10px' }}
+              onClick={() => {
+                console.log('🛑 Ending roleplay, going to FEEDBACK');
+                stopConversation();
+                goNext(PAGES.FEEDBACK);
+              }}
+            >
+              End roleplay and get feedback
+            </button>
+          </div>
+    </div>
+  );
+}
+
+    function FeedbackPage({ goNext, sessionID }) {
+      const areas = [
+        'Anchoring',
+        'Priority Disclosure Timing',
+        'Integrative Bargaining',
+        'Trust and Reciprocity',
+        'Perspective Taking',
+        'Team Negotiation'
+      ];
+      const [scores, setScores] = useState({});
+      const [feedback, setFeedback] = useState({});
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+  if (!sessionID) return;
+
+  console.log('🛰️  FeedbackPage: about to fetch with sessionID =', sessionID);
+  setLoading(true);
+
+  fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionID })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error(res.statusText);
+      console.log('🛰️  FeedbackPage: feedback endpoint responded with status', res.status);
+      return res.json();
+    })
+    .then(data => {
+      console.log('🛰️  FeedbackPage: received data', data);
+      setScores(data.scores);
+      setFeedback(data.feedback);
+    })
+    .catch(err => {
+      console.error('🛰️  FeedbackPage: fetch error', err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });  // ← semicolon here terminates the entire chained expression
+}, [sessionID]);
+
+      if (loading) {
+        return <div className="page-content"><h2>Loading feedback...</h2></div>;
+      }
+
+      return (
+        <div className="page-content">
+          <h2>Performance Feedback</h2>
+          {areas.map(area => (
+            <div key={area} style={{ marginBottom: '20px' }}>
+              <h4>{area}</h4>
+              <p><strong>Score:</strong> {scores[area] || 'N/A'}</p>
+              <p>{feedback[area] || 'No feedback available.'}</p>
+            </div>
+          ))}
+          <button className="btn btn-primary" onClick={() => goNext(PAGES.DATA_POLICY)}>
+            Restart Course
+          </button>
+        </div>
+      );
+    }
+
+    function App() {
+      const [page, setPage] = useState(PAGES.DATA_POLICY);
+      const [completedPages, setCompletedPages] = useState([]);
+      const [scenario, setScenario] = useState(defaultScenarioOne);
+      const [plan, setPlan] = useState('# Negotiation Plan\n\n');
+      const [sessionID, setSessionID]           = useState(null);
+
+      const generatePlan = async () => {
+            setPage(PAGES.PLAN);
+            setPlan('');
+            const resp = await fetch('/api/generate_plan', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+              },
+              body: JSON.stringify({ scenario })
+            });
+            if (!resp.ok) throw new Error(resp.statusText);
+
+            const reader  = resp.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // Decode this chunk and append to buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Split on newlines, keep the last partial line in buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        // Process only the complete lines
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const { chunk } = JSON.parse(line.slice(6));
+          setPlan(prev => prev + chunk);
+        }
+      }
+     };
+
+      function goNext(nextPage) {
+          // mark *current* page as completed
+          setCompletedPages(prev =>
+            prev.includes(page) ? prev : [...prev, page]
+          );
+          // then navigate
+          setPage(nextPage);
+        }
+
+      // Hook sidebar clicks → React state
+      useEffect(() => {
+        Object.values(PAGES).forEach(key => {
+          const li = document.getElementById(key);
+          if (!li) return;
+          li.onclick = () => setPage(key);
+          const isDone = key === page || completedPages.includes(key);
+          li.classList.toggle('completed', isDone);
+        });
+      }, [page, completedPages]);
+
+      function DataPolicy() {
+        return (
+          <div className="page-content">
+            <h2>Data Usage Policy</h2>
+            <p>
+              [Your policy text here…]
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => goNext(PAGES.SCENARIO)}
+            >
+              Next: Scenario Setup
+            </button>
+          </div>
+        );
+      }
+
+
+
+      return (
+        <>
+          {page === PAGES.DATA_POLICY && <DataPolicy goNext={() => goNext(PAGES.SCENARIO)} />}
+          {page === PAGES.SCENARIO    && (
+            <ScenarioEditor
+              scenario={scenario}
+              setScenario={setScenario}
+              onGenerate={generatePlan}
+              goNext={goNext}
+            />
+          )}
+          {page === PAGES.PLAN        && <NegotiationPlan plan={plan} setPlan={setPlan} goNext={goNext} />}
+          {page === PAGES.CHAT && (
+            <ChatbotUI
+              goNext={goNext}
+              onSession={(id) => setSessionID(id)}
+            />
+          )}
+          {page === PAGES.FEEDBACK && (
+            <FeedbackPage
+              goNext={goNext}
+              sessionID={sessionID}
+            />
+          )}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('app-container')).render(<App />);
+  </script>
+</body>
+</html>
