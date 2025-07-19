@@ -1,21 +1,41 @@
-# Negotiation Skills for Corporate Professionals
+# The Structure of a Negotiation for corporate professionals
 
-Negotiation is the art of reaching a mutual agreement when two or more parties have different needs or goals
-pon.harvard.edu
-. In business settings—whether securing vendor contracts, setting service terms, or closing sales—negotiation is essential. For example, a consulting team and a client might negotiate project scope, or a purchasing manager and a supplier haggle over price and delivery. Research defines negotiation as an interpersonal decision‐making process needed whenever parties cannot achieve their objectives alone
-pon.harvard.edu
-. In other words, if both sides must agree on a joint decision but have different preferences, they negotiate
-pon.harvard.edu
-. Why it matters: Effective negotiation can save costs, build strong partnerships, and prevent conflicts. Most professionals aren’t “natural-born negotiators,” but studies show anyone can improve with training, preparation, and practice
-pon.harvard.edu
-pon.harvard.edu
-. In corporate roles (consultants, auditors, sales reps, procurement teams), having a clear negotiation plan helps secure better terms and maintain good relationships.
+Successful negotiations unfold in a series of coordinated stages. In this section, we introduce the four core components you will explore in detail on subsequent pages:
 
-# Fundamental Concepts and Strategies
+1. **Establishing Boundaries**  
+   Defining your **BATNA** (Best Alternative to a Negotiated Agreement) and reservation point.  
+   > Knowing your walk‑away alternative gives you the confidence to reject suboptimal deals and anchors your reservation price (Fisher & Ury, 1981; Malhotra & Bazerman, 2007).
 
-Academic negotiation theory emphasizes interest-based, value-creating approaches rather than hard positional haggling. The classic framework (Fisher & Ury’s Getting to Yes) urges negotiators to focus on underlying interests, not fixed positions
+2. **Establishing Objectives**  
+   Clarifying your **interests**, priorities, and fairness standards.  
+   > A clear objective‑setting process ensures you focus on what truly matters—beyond price—to create lasting value (Lewicki, Saunders, & Barry, 2015).
 
+3. **Generating Options**  
+   Crafting multiple, creative **package deals** (MESOs) that expand value for all parties.  
+   > Generating several equivalent offers simultaneously encourages integrative trade‑offs and reveals true preferences (Neale & Bazerman, 1992; Pruitt & Carnevale, 1993).
 
+4. **Making Offers and Concessions**  
+   Deploying **anchoring**, calibrated concessions, and reciprocity to claim and create value.  
+   > Well‑timed first offers and planned concession patterns drive better outcomes while preserving relationships (Galinsky & Mussweiler, 2001; Loschelder, Gaule, & Mussweiler, 2022).
 
-Sources:
-https://www.pon.harvard.edu/daily/negotiation-skills-daily/what-is-negotiation/#:~:text=1,we%20need%20to%20put%20forth
+---
+
+Each of the following pages will delve into one of these components—explaining **what it is**, **why it works**, and **how to apply it**—with key studies, practical frameworks, and real‑world examples.
+
+---
+
+### References
+
+Fisher, R., & Ury, W. (1981). *Getting to Yes: Negotiating Agreement Without Giving In*. Penguin Books.
+
+Galinsky, A. D., & Mussweiler, T. (2001). First offers as anchors: The role of perspective‑taking and negotiator focus. *Journal of Personality and Social Psychology*, 81(4), 657–669. https://doi.org/10.1037/0022-3514.81.4.657
+
+Lewicki, R. J., Saunders, D. M., & Barry, B. (2015). *Negotiation: Readings, Exercises, and Cases* (7th ed.). McGraw‑Hill Education.
+
+Malhotra, D., & Bazerman, M. H. (2007). *Negotiation Genius: How to Overcome Obstacles and Achieve Brilliant Results at the Bargaining Table and Beyond*. Bantam.
+
+Neale, M. A., & Bazerman, M. H. (1992). *Negotiating Rationally*. Free Press.
+
+Pruitt, D. G., & Carnevale, P. J. (1993). *Negotiation in Social Conflict*. Open University Press.
+
+Loschelder, D. D., Gaule, A., & Mussweiler, T. (2022). Timing matters: The priority‑reveal effect in multi‑issue negotiations. *Journal of Experimental Social Psychology*, 103, 104415. https://doi.org/10.1016/j.jesp.2022.104415  

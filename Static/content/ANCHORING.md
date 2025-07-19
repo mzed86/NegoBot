@@ -12,8 +12,8 @@ Anchoring is the cognitive bias whereby people rely too heavily on the first pie
 
 ### 3. How to Apply Anchoring Effectively  
 #### A. Go First—with “Bold but Believable” Anchors  
-- **Anchor at the optimistic end** of the plausible range. Base your number on market data, cost‐plus analysis, or performance metrics so it feels **defensible**, not arbitrary.  
-- **Justify your anchor** immediately. For example:  
+- **-Anchor at the optimistic end** of the plausible range. Base your number on market data, cost‐plus analysis, or performance metrics so it feels **defensible**, not arbitrary.  
+- **-Justify your anchor** immediately. For example:  
   > “Based on our quarterly cost projections and the premium customization you require, \$120K is a fair starting point.”  
 
 #### B. Precision vs. Round Numbers  
