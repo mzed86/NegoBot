@@ -552,6 +552,7 @@ async def generate_feedback(request: Request):
         "feedback": feedback
     })
 
+# Serve the index.html file for the root path and any other paths
 INDEX_PATH = os.path.join("Static", "index.html")
 
 # GET / → index.html
@@ -563,6 +564,7 @@ async def serve_index():
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
     return FileResponse(INDEX_PATH)
+
 
 
 if __name__ == "__main__":

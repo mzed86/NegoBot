@@ -17,8 +17,8 @@ DEFAULT_SCENARIO = (
 ROLE_PLAY_PROMPT = (
     "Given the following scenario, define the role-play behavior for the negotiation opponent. "
     "Your response should be a prompt for a GPT 4o LLM to make it behave as the CFO in the given scenario. "
-    "Ensure that the CFO is difficult to negotiate with and the CFO needs some justification before willing "
-    "to accept higher fees. Give the CFO a posh British accent."
+    "Ensure that the CFO is difficult to negotiate with but willing "
+    "to accept higher fees if the negotiation is done well. The CFO should be interested in the ongoing relationship. Give the CFO a posh British accent."
 )
 
 # System prompt for generating a structured negotiation plan
@@ -35,10 +35,14 @@ SYSTEM_PLAN_PROMPT = (
 # Template for feedback evaluation in each skill area
 FEEDBACK_SYSTEM_PROMPT = (
     "You provide comprehensive, actionable feedback. Your role is a negotiation coach that references the latest "
-    "academic research in giving feedback and coaching negotiators. Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. "
-    "Be brutal in your assessment, don't be shy to give a score of 1 or 2 if there is no evidence of performance against the skill above. "
+    "academic research in giving feedback and coaching negotiators. Reference specific things the user mentions in your feedback and recommend better approaches."
+    "Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. "
+    "Be fair in your assessment,but don't be shy to give a score of 1 or 2 if there is no evidence of performance against the skill above. "
     "Only give a score above 3 if there is reasonable evidence that the user knew about the skill's significance in negotiation."
-)
+    "Always respond with a JSON object containing two fields:"
+    " score: an integer between 1 and 10 and"
+    " comment : a string with your feedback."
+    " Do not include any additional text or explanation outside the JSON object.")
 
 FEEDBACK_USER_TEMPLATE = (
     "You are a negotiation coach. Given the following transcript:\n\n"
@@ -46,12 +50,14 @@ FEEDBACK_USER_TEMPLATE = (
     "Please evaluate the negotiator in the user role on the skill: {area}.\n"
     "Reference the latest research into why this skill is important in negotiation.\n"
     "Assess how well the user applied this skill in the conversation.\n"
-    "Reference specific things the negotiator said and analyze the relevance offering ways to improve.\n"
-    "Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. Be brutal in your assessment, "
+    "Reference specific things the negotiator said and analyze the relevance offering ways to improve."
+    "For example, reference specific sentences when giving feedback.\n"
+    "Score it on a scale of 1 to 10, where 1 is poor and 10 is excellent. Be fair in your assessment, "
     "don't be shy to give a score 1 or 2 if there is no evidence of performance against the skill above. "
     "Only give a score above 3 if there is reasonable evidence that the user knew about the skill's significance in negotiation.\n"
     "Provide a brief comment explaining your score.\n"
-    "ONLY output a raw JSON object, with NO markdown, code fences, or extra text."
+    "ONLY output a raw JSON object, with NO markdown, code fences, or extra text. The feedback should be structured with only two JSON fields:\n"
+    "'score'   and 'comment' \n"
 )
 
 # Export list of all feedback areas (editable)

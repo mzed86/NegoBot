@@ -2,17 +2,23 @@
 
 Successful negotiations unfold in a series of coordinated stages. In this section, we introduce the four core components you will explore in detail on subsequent pages:
 
-1. **Establishing Boundaries**  
+1. **Establishing Objectives**  
+   Clarifying your **interests**, priorities, and fairness standards.  
+   > A clear objective‑setting process ensures you focus on what truly matters—beyond price—to create lasting value (Lewicki, Saunders, & Barry, 2015).
+
+---
+
+2. **Establishing Boundaries**  
    Defining your **BATNA** (Best Alternative to a Negotiated Agreement) and reservation point.  
    > Knowing your walk‑away alternative gives you the confidence to reject suboptimal deals and anchors your reservation price (Fisher & Ury, 1981; Malhotra & Bazerman, 2007).
 
-2. **Establishing Objectives**  
-   Clarifying your **interests**, priorities, and fairness standards.  
-   > A clear objective‑setting process ensures you focus on what truly matters—beyond price—to create lasting value (Lewicki, Saunders, & Barry, 2015).
+---   
 
 3. **Generating Options**  
    Crafting multiple, creative **package deals** (MESOs) that expand value for all parties.  
    > Generating several equivalent offers simultaneously encourages integrative trade‑offs and reveals true preferences (Neale & Bazerman, 1992; Pruitt & Carnevale, 1993).
+
+---
 
 4. **Making Offers and Concessions**  
    Deploying **anchoring**, calibrated concessions, and reciprocity to claim and create value.  

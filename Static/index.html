@@ -13,13 +13,18 @@
 
   <!-- Styles -->
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      }
+
     :root {
       --primary:#fecb00; --secondary:#333333; --bg:#f5f5f5; --card:#ffffff;
       --font:'Roboto',Arial,sans-serif; --rad:12px; --trans:.3s;
     }
     *{box-sizing:border-box;}
     body{margin:0;padding:0;font-family:var(--font);background:var(--bg);color:var(--secondary);}
-    .container{display:flex;min-height:100vh;}
+    .container{display:flex;min-height:100%;}
 
 
     /* hamburger & mobile drawer */
@@ -69,6 +74,8 @@
     ul{list-style:none;padding:0;margin:0;}
     .chapter>div,.sub-item,.single-item{cursor:pointer;padding:8px 10px;border-radius:var(--rad);transition:background var(--trans);display:flex;align-items:center;}
     .chapter>div:hover,.sub-item:hover,.single-item:hover{background:rgba(0,0,0,.1);}
+     /* sidebar section headers */
+    .separator{padding:8px 10px;margin:6px 0;font-weight:600;font-size:.85rem;letter-spacing:.5px;color:var(--secondary);text-transform:uppercase;cursor:default;}
     .completed>div::before,.sub-item.completed::before,.single-item.completed::before{content:'✔';color:green;margin-right:6px;}
     .completed>div,.sub-item.completed,.single-item.completed{background:rgba(0,0,0,.2);}
     .active>div,.sub-item.active,.single-item.active{background:rgba(255,255,255,.3);}
@@ -88,8 +95,17 @@
     display:block;   /* avoid inline-whitespace gaps */
   }
     .content{flex:1;padding:20px;overflow-y:auto;}
-    .page-content{background:var(--card);border-radius:var(--rad);box-shadow:0 2px 8px rgba(0,0,0,.05);padding:20px;min-height:calc(100vh - 40px);display:flex;flex-direction:column;}
+    .page-content {
+        background: var(--card);
+        border-radius: var(--rad);
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+        padding: 20px;
+        display: flex;            /* ← important! */
+        flex-direction: column;   /* ← so its children can flex */
+        flex: 1;                  /* ← take all available height */
+      }
     .editable-html{flex:1;width:100%;min-height:300px;padding:10px;border:1px solid #ccc;border-radius:4px;background:#fff;font-family:inherit;font-size:1rem;resize:vertical;}
+    .instructions{margin:10px 0;font-style:italic;color:var(--secondary);}
     .preview{min-height:200px;}
     .btn{font-size:16px;padding:10px 20px;margin:10px 0;border:none;border-radius:var(--rad);cursor:pointer;transition:transform var(--trans);}
     .btn:hover{transform:translateY(-2px);}
@@ -193,9 +209,12 @@
       { key:'FEEDBACK',     label:'Performance Feedback' }
     ];
 
+    const SURVEY_PAGE = { key:'SURVEY', label:'Course Survey' };
+
     const SEQUENCE = [
       ...CHAPTERS.flatMap(ch => [ch.key, ...ch.subs.map(s => s.key)]),
-      ...EXTRA_PAGES.map(p=>p.key)
+      ...EXTRA_PAGES.map(p=>p.key),
+      SURVEY_PAGE.key
     ];
 
     const LABEL_MAP = [
@@ -203,7 +222,8 @@
         {key:ch.key,label:ch.label},
         ...ch.subs.map(s=>({key:s.key,label:s.label}))
       ]),
-      ...EXTRA_PAGES
+      ...EXTRA_PAGES,
+      SURVEY_PAGE
     ].reduce((acc,{key,label})=>{acc[key]=label;return acc;},{});
 
     /* ----- 2. SIDEBAR COMPONENT --------------------------------------------- */
@@ -214,6 +234,8 @@
       },[]);
       return (
         <ul>
+          {/* --- first section header ------------------------------------- */}
+          <li className="separator">Course Content</li>
           {CHAPTERS.map(ch=>{
             /* expand when user toggles it, or when a sub-page is active */
             const isExpanded = expanded[ch.key] || ch.subs.some(s => s.key === current);
@@ -248,6 +270,10 @@
               </li>
             );
           })}
+
+          {/* --- second section header ------------------------------------ */}
+          <li className="separator">Negotiation Preparation and Role Play</li>
+
           {EXTRA_PAGES.map(p=>(
             <li key={p.key}
                 className={`single-item ${completed.includes(p.key)?'completed':''} ${current===p.key?'active':''}`}
@@ -255,6 +281,12 @@
               {p.label}
             </li>
           ))}
+          <li className="separator">Course Completion</li>
+          <li key={SURVEY_PAGE.key}
+              className={`single-item ${completed.includes(SURVEY_PAGE.key)?'completed':''} ${current===SURVEY_PAGE.key?'active':''}`}
+              onClick={()=>onSelect(SURVEY_PAGE.key)}>
+            {SURVEY_PAGE.label}
+          </li>
         </ul>
       );
     }
@@ -315,6 +347,12 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
       return (
         <div className="page-content">
           <h2>Scenario Setup</h2>
+           <p className="instructions">
+           Research shows that students learn best when they shape the scenario themselves—so seize the reins, experiment boldly, and enjoy the journey.
+              <br />
+              <br />
+              <strong>Tip:</strong> You can use the demo scenarios below for some inspiration.
+          </p>
           <textarea className="editable-html" value={scenario}
                     onChange={e=>setScenario(e.target.value)} />
           <h3 style={{marginTop:'20px'}}>Demo Scenarios</h3>
@@ -551,7 +589,7 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
               <p>{feedback[a]??'No feedback available.'}</p>
             </div>
           ))}
-          <button className="btn btn-primary" onClick={()=>goNext('DATA_POLICY')}>Restart Course</button>
+          <button className="btn btn-primary" onClick={()=>goNext('SURVEY')}>Next: Course Survey</button>
         </div>
       );
     }
@@ -631,7 +669,7 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
       },[page,completed]);
 
       /* RENDER PAGE */
-      if(EXTRA_PAGES.some(p=>p.key===page)){
+      if (EXTRA_PAGES.some(p=>p.key===page) || page === SURVEY_PAGE.key) {
         switch(page){
           case 'DATA_POLICY': return (
             <ContentPage
@@ -649,6 +687,7 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
                                      goNext={goNext}
                                      onSession={setSessionID}/>;
           case 'FEEDBACK':    return <FeedbackPage goNext={goNext} sessionID={sessionID}/>;
+          case 'SURVEY':      return <SurveyPage onSubmit={()=>goNext('DATA_POLICY')}/>;
           default:            return <PlaceholderPage label={LABEL_MAP[page]||page}/>;
         }
       }
@@ -666,10 +705,21 @@ The client is detail-oriented and operates in a fast-paced, high-stakes environm
       );
      }
 
+    /* ----- 11. SURVEY PAGE (markdown-driven) --------------------------------- */
+
+   function SurveyPage({ onSubmit }) {
+      return (
+        <div className="page-content" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+          <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfczhCl8rkzzzuwioYGIT2anuc-XdWXXY0dRHJuUrCfC38osg/viewform?embedded=true" width="640" height="900" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      );
+    }
+
     ReactDOM.createRoot(document.getElementById('app-root')).render(<App />);
     /* plain JS toggle for mobile drawer */
     document.getElementById('hamburger').onclick = () =>
     document.querySelector('.sidebar').classList.toggle('open');
+
   </script>
 </body>
 </html>
